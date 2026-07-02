@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScreeningRouteImport } from './routes/screening'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as FinishRouteImport } from './routes/finish'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ScreeningRoute = ScreeningRouteImport.update({
   id: '/screening',
   path: '/screening',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinishRoute = FinishRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/finish': typeof FinishRoute
+  '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/finish': typeof FinishRoute
+  '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/finish': typeof FinishRoute
+  '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/finish' | '/screening'
+  fullPaths: '/' | '/finish' | '/review' | '/screening'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/finish' | '/screening'
-  id: '__root__' | '/' | '/finish' | '/screening'
+  to: '/' | '/finish' | '/review' | '/screening'
+  id: '__root__' | '/' | '/finish' | '/review' | '/screening'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FinishRoute: typeof FinishRoute
+  ReviewRoute: typeof ReviewRoute
   ScreeningRoute: typeof ScreeningRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/screening'
       fullPath: '/screening'
       preLoaderRoute: typeof ScreeningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/finish': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FinishRoute: FinishRoute,
+  ReviewRoute: ReviewRoute,
   ScreeningRoute: ScreeningRoute,
 }
 export const routeTree = rootRouteImport
