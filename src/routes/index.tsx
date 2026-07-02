@@ -54,15 +54,16 @@ function Landing() {
 
     // 2) Create the session row
     try {
-      const { data, error } = await supabase
+      const id = crypto.randomUUID();
+      const client_token = crypto.randomUUID();
+      const { error } = await supabase
         .from("sessions")
-        .insert({})
-        .select("id, client_token")
-        .single();
-      if (error || !data) throw error ?? new Error("Failed to create session");
-      setSession(data.id, data.client_token, stream);
+        .insert({ id, client_token });
+      if (error) throw error;
+      setSession(id, client_token, stream);
 
       navigate({ to: "/screening" });
+
     } catch (err) {
       console.error("[session] insert failed:", err);
       stream.getTracks().forEach((t) => t.stop());
