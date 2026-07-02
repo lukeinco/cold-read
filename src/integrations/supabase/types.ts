@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      responses: {
+        Row: {
+          created_at: string
+          id: string
+          segment_id: string
+          session_id: string
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          segment_id: string
+          session_id: string
+          sort_order: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          segment_id?: string
+          session_id?: string
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          linkedin_url: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          linkedin_url?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          linkedin_url?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
