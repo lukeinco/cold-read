@@ -7,12 +7,11 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-type MicState = "idle" | "requesting" | "denied";
+type MicState = "idle" | "requesting" | "denied" | "error";
 
 function isChrome() {
   if (typeof navigator === "undefined") return true;
   const ua = navigator.userAgent;
-  // Chrome, not Edge or Opera or Brave-reporting-as-Chromium is fine — this is a soft warning
   return /Chrome\//.test(ua) && !/Edg\//.test(ua) && !/OPR\//.test(ua);
 }
 
@@ -20,6 +19,7 @@ function Landing() {
   const navigate = useNavigate();
   const { setSession } = useSession();
   const [micState, setMicState] = useState<MicState>("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const [chromeOk, setChromeOk] = useState(true);
 
   useEffect(() => {
@@ -28,8 +28,32 @@ function Landing() {
 
   const handleBegin = async () => {
     setMicState("requesting");
+    setErrorMsg("");
+
+    // 1) Mic access — must be inside the user gesture
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const e = err as DOMException;
+      console.error("[mic] getUserMedia failed:", e.name, e.message);
+      if (e.name === "NotAllowedError" || e.name === "SecurityError") {
+        setMicState("denied");
+      } else if (e.name === "NotFoundError") {
+        setErrorMsg("No microphone found. Plug one in and retry.");
+        setMicState("error");
+      } else if (e.name === "NotReadableError") {
+        setErrorMsg("Your microphone is in use by another app. Close it and retry.");
+        setMicState("error");
+      } else {
+        setErrorMsg(`${e.name || "Error"}: ${e.message || "Couldn't access mic."}`);
+        setMicState("error");
+      }
+      return;
+    }
+
+    // 2) Create the session row
+    try {
       const { data, error } = await supabase
         .from("sessions")
         .insert({})
@@ -39,10 +63,14 @@ function Landing() {
       setSession(data.id, stream);
       navigate({ to: "/screening" });
     } catch (err) {
-      console.error(err);
-      setMicState("denied");
+      console.error("[session] insert failed:", err);
+      stream.getTracks().forEach((t) => t.stop());
+      const msg = err instanceof Error ? err.message : "Couldn't start session.";
+      setErrorMsg(msg);
+      setMicState("error");
     }
   };
+
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -110,16 +138,18 @@ function Landing() {
 
           {/* Action */}
           <div className="mt-10">
-            {micState === "denied" ? (
+            {micState === "denied" || micState === "error" ? (
               <div
                 role="alert"
                 className="border border-charcoal bg-parchment p-6"
               >
                 <p className="font-display text-2xl tracking-wide text-charcoal">
-                  Microphone blocked
+                  {micState === "denied" ? "Microphone blocked" : "Couldn't start"}
                 </p>
                 <p className="mt-2 font-serif text-lg text-charcoal/85">
-                  We need your microphone to continue. Enable it in Chrome and refresh.
+                  {micState === "denied"
+                    ? "We need your microphone to continue. Enable it in Chrome and refresh."
+                    : errorMsg}
                 </p>
                 <button
                   onClick={() => {
@@ -132,6 +162,7 @@ function Landing() {
                   <span aria-hidden>→</span>
                 </button>
               </div>
+
             ) : (
               <button
                 onClick={handleBegin}
