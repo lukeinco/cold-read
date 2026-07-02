@@ -17,18 +17,51 @@ function isChrome() {
 
 function Landing() {
   const navigate = useNavigate();
-  const { setSession } = useSession();
+  const { setSession, getMediaStream, stopAllTracks } = useSession();
   const [micState, setMicState] = useState<MicState>("idle");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [chromeOk, setChromeOk] = useState(true);
 
   useEffect(() => {
     setChromeOk(isChrome());
-  }, []);
+    const onPageHide = () => {
+      const s = getMediaStream();
+      if (s) s.getTracks().forEach((t) => t.stop());
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [getMediaStream]);
+
+  const createSessionAndGo = async (stream: MediaStream) => {
+    const id = crypto.randomUUID();
+    const client_token = crypto.randomUUID();
+    const { error } = await supabase
+      .from("sessions")
+      .insert({ id, client_token });
+    if (error) throw error;
+    setSession(id, client_token, stream);
+    navigate({ to: "/screening" });
+  };
 
   const handleBegin = async () => {
     setMicState("requesting");
     setErrorMsg("");
+
+    // Reuse an existing live stream (e.g. Back button from /screening)
+    const existing = getMediaStream();
+    const liveTrack = existing?.getAudioTracks().find((t) => t.readyState === "live");
+    if (existing && liveTrack) {
+      try {
+        await createSessionAndGo(existing);
+        return;
+      } catch (err) {
+        console.error("[session] insert failed:", err);
+        const msg = err instanceof Error ? err.message : "Couldn't start session.";
+        setErrorMsg(msg);
+        setMicState("error");
+        return;
+      }
+    }
 
     // 1) Mic access — must be inside the user gesture
     let stream: MediaStream;
@@ -39,31 +72,40 @@ function Landing() {
       console.error("[mic] getUserMedia failed:", e.name, e.message);
       if (e.name === "NotAllowedError" || e.name === "SecurityError") {
         setMicState("denied");
+        return;
       } else if (e.name === "NotFoundError") {
         setErrorMsg("No microphone found. Plug one in and retry.");
         setMicState("error");
+        return;
       } else if (e.name === "NotReadableError") {
-        setErrorMsg("Your microphone is in use by another app. Close it and retry.");
-        setMicState("error");
+        // Might be our own orphaned track — release and retry once.
+        stopAllTracks();
+        await new Promise((r) => setTimeout(r, 400));
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err2) {
+          const e2 = err2 as DOMException;
+          console.error("[mic] retry failed:", e2.name, e2.message);
+          if (e2.name === "NotReadableError") {
+            setErrorMsg(
+              "Your microphone is being held by another browser tab or app. Close other tabs and apps that use the mic (or fully quit and reopen Chrome), then retry.",
+            );
+          } else {
+            setErrorMsg(`${e2.name || "Error"}: ${e2.message || "Couldn't access mic."}`);
+          }
+          setMicState("error");
+          return;
+        }
       } else {
         setErrorMsg(`${e.name || "Error"}: ${e.message || "Couldn't access mic."}`);
         setMicState("error");
+        return;
       }
-      return;
     }
 
     // 2) Create the session row
     try {
-      const id = crypto.randomUUID();
-      const client_token = crypto.randomUUID();
-      const { error } = await supabase
-        .from("sessions")
-        .insert({ id, client_token });
-      if (error) throw error;
-      setSession(id, client_token, stream);
-
-      navigate({ to: "/screening" });
-
+      await createSessionAndGo(stream);
     } catch (err) {
       console.error("[session] insert failed:", err);
       stream.getTracks().forEach((t) => t.stop());
@@ -72,6 +114,7 @@ function Landing() {
       setMicState("error");
     }
   };
+
 
 
   return (
