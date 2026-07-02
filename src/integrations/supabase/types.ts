@@ -51,6 +51,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          client_token: string
           created_at: string
           email: string | null
           id: string
@@ -58,6 +59,7 @@ export type Database = {
           submitted_at: string | null
         }
         Insert: {
+          client_token?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -65,6 +67,7 @@ export type Database = {
           submitted_at?: string | null
         }
         Update: {
+          client_token?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -78,7 +81,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_session_token: { Args: never; Returns: string }
+      session_matches_token: {
+        Args: { _session_id: string; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -57,10 +57,11 @@ function Landing() {
       const { data, error } = await supabase
         .from("sessions")
         .insert({})
-        .select("id")
+        .select("id, client_token")
         .single();
       if (error || !data) throw error ?? new Error("Failed to create session");
-      setSession(data.id, stream);
+      setSession(data.id, data.client_token, stream);
+
       navigate({ to: "/screening" });
     } catch (err) {
       console.error("[session] insert failed:", err);
