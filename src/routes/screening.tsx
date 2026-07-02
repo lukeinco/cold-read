@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { segments, type Segment } from "@/config/segments";
 import { useSession } from "@/context/session-context";
-import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/screening")({
   head: () => ({
