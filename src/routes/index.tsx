@@ -138,16 +138,18 @@ function Landing() {
 
           {/* Action */}
           <div className="mt-10">
-            {micState === "denied" ? (
+            {micState === "denied" || micState === "error" ? (
               <div
                 role="alert"
                 className="border border-charcoal bg-parchment p-6"
               >
                 <p className="font-display text-2xl tracking-wide text-charcoal">
-                  Microphone blocked
+                  {micState === "denied" ? "Microphone blocked" : "Couldn't start"}
                 </p>
                 <p className="mt-2 font-serif text-lg text-charcoal/85">
-                  We need your microphone to continue. Enable it in Chrome and refresh.
+                  {micState === "denied"
+                    ? "We need your microphone to continue. Enable it in Chrome and refresh."
+                    : errorMsg}
                 </p>
                 <button
                   onClick={() => {
@@ -160,6 +162,7 @@ function Landing() {
                   <span aria-hidden>→</span>
                 </button>
               </div>
+
             ) : (
               <button
                 onClick={handleBegin}
