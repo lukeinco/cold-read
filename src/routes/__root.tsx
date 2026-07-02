@@ -84,13 +84,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Cold Read is a voice-only screening tool. Candidates record spoken answers to a fixed sequence of prompts.",
       },
-      { property: "og:title", content: "Cold Read" },
+      { property: "og:title", content: "Cold Read — voice screening for candidates" },
       {
         property: "og:description",
         content: "Voice-only candidate screening. Record spoken answers to a fixed prompt sequence.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Cold Read — voice screening for candidates" },
+      { name: "description", content: "Cold Read Studio is a web application for job candidate voice screening via audio prompt responses." },
+      { property: "og:description", content: "Cold Read Studio is a web application for job candidate voice screening via audio prompt responses." },
+      { name: "twitter:description", content: "Cold Read Studio is a web application for job candidate voice screening via audio prompt responses." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/611a0527-7365-4798-9848-2dc81063c909/id-preview-ea20c6ff--881f0d99-d514-4f41-896f-4a47e6c166f7.lovable.app-1783028490034.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/611a0527-7365-4798-9848-2dc81063c909/id-preview-ea20c6ff--881f0d99-d514-4f41-896f-4a47e6c166f7.lovable.app-1783028490034.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
