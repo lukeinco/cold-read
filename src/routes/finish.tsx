@@ -23,7 +23,7 @@ const urlSchema = z
   .refine((v) => /linkedin\.com/i.test(v), "Must be a LinkedIn URL");
 
 function FinishScreen() {
-  const { sessionId, clearSession } = useSession();
+  const { sessionId, scopedClient, clearSession } = useSession();
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -32,14 +32,14 @@ function FinishScreen() {
 
   const emailValid = useMemo(() => emailSchema.safeParse(email).success, [email]);
   const urlValid = useMemo(() => urlSchema.safeParse(linkedin).success, [linkedin]);
-  const canSubmit = emailValid && urlValid && !submitting && !!sessionId;
+  const canSubmit = emailValid && urlValid && !submitting && !!sessionId && !!scopedClient;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
-    const { error: updateError } = await supabase
+    const { error: updateError } = await scopedClient!
       .from("sessions")
       .update({
         email: email.trim(),
@@ -47,6 +47,7 @@ function FinishScreen() {
         submitted_at: new Date().toISOString(),
       })
       .eq("id", sessionId!);
+
 
     if (updateError) {
       setError("Couldn't submit. Try again.");
