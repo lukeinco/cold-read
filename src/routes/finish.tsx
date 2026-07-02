@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { useSession } from "@/context/session-context";
-import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/finish")({
   head: () => ({
