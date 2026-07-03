@@ -376,58 +376,66 @@ function SegmentEditor({
       <div className="mt-6 grid gap-6">
         <Field label="Type">
           <div className="flex flex-wrap gap-2">
-            {SEG_TYPES.map((t) => (
+            {ADD_OPTIONS.map((opt) => (
               <button
-                key={t}
-                onClick={() => handleTypeChange(t)}
+                key={opt.key}
+                onClick={() => handleTypeChange(opt.key)}
                 className={`font-mono text-[11px] uppercase tracking-[0.24em] px-3 py-2 border transition-colors ${
-                  type === t
+                  type === opt.key
                     ? "bg-charcoal text-parchment border-charcoal"
                     : "border-charcoal/30 text-charcoal hover:border-charcoal"
                 }`}
               >
-                {t}
+                {opt.label}
               </button>
             ))}
           </div>
         </Field>
 
-        <Field label="Cue label">
+        <Field label={isAudio ? "Admin label (internal only)" : "Cue label"}>
           <input
             value={cueLabel}
             onChange={(e) => setCueLabel(e.target.value)}
+            placeholder={isAudio ? "e.g. Gatekeeper opener" : ""}
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
           />
+          {isAudio && (
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Never shown to candidates.
+            </p>
+          )}
         </Field>
 
-        <Field label="Cue color">
-          <div className="flex items-center gap-3">
-            {PALETTE.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCueColor(c)}
-                className={`h-8 w-8 rounded-full border-2 transition-all ${
-                  cueColor.toLowerCase() === c.toLowerCase()
-                    ? "border-charcoal scale-110"
-                    : "border-charcoal/20"
-                }`}
-                style={{ background: c }}
-                aria-label={c}
+        {!isAudio && (
+          <Field label="Cue color">
+            <div className="flex items-center gap-3">
+              {PALETTE.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCueColor(c)}
+                  className={`h-8 w-8 rounded-full border-2 transition-all ${
+                    cueColor.toLowerCase() === c.toLowerCase()
+                      ? "border-charcoal scale-110"
+                      : "border-charcoal/20"
+                  }`}
+                  style={{ background: c }}
+                  aria-label={c}
+                />
+              ))}
+              <input
+                value={cueColor}
+                onChange={(e) => setCueColor(e.target.value)}
+                placeholder="#RRGGBB"
+                className="ml-2 w-28 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 font-mono text-sm text-charcoal focus:outline-none"
               />
-            ))}
-            <input
-              value={cueColor}
-              onChange={(e) => setCueColor(e.target.value)}
-              placeholder="#RRGGBB"
-              className="ml-2 w-28 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 font-mono text-sm text-charcoal focus:outline-none"
-            />
-            <span
-              className="ml-2 inline-block h-6 w-6 border border-charcoal/20"
-              style={{ background: cueColor }}
-              aria-hidden
-            />
-          </div>
-        </Field>
+              <span
+                className="ml-2 inline-block h-6 w-6 border border-charcoal/20"
+                style={{ background: cueColor }}
+                aria-hidden
+              />
+            </div>
+          </Field>
+        )}
 
         {type === "scripted" && (
           <Field label="Script text">
@@ -440,18 +448,20 @@ function SegmentEditor({
           </Field>
         )}
 
-        <Field label="Countdown (seconds)">
-          <input
-            type="number"
-            min={0}
-            value={countdown}
-            onChange={(e) => setCountdown(e.target.value)}
-            className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
-          />
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-            Leave empty for no timer — improv should be empty.
-          </p>
-        </Field>
+        {!isAudio && (
+          <Field label="Countdown (seconds)">
+            <input
+              type="number"
+              min={0}
+              value={countdown}
+              onChange={(e) => setCountdown(e.target.value)}
+              className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+            />
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Leave empty for no timer — improv should be empty.
+            </p>
+          </Field>
+        )}
 
         <Field label="Active">
           <label className="inline-flex items-center gap-3 cursor-pointer">
@@ -467,7 +477,9 @@ function SegmentEditor({
           </label>
         </Field>
 
-        <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
+        {isAudio && (
+          <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
+        )}
 
         <div className="flex items-center justify-between border-t border-charcoal/15 pt-6">
           <button
