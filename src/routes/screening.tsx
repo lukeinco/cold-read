@@ -17,26 +17,25 @@ export const Route = createFileRoute("/screening")({
 type Phase = "prompt" | "cue" | "respond" | "upload";
 
 function Screening() {
-  const { sessionId, mediaStream, scopedClient } = useSession();
+  const { sessionId, sessionToken, mediaStream } = useSession();
 
-  if (!sessionId || !mediaStream || !scopedClient) {
+  if (!sessionId || !sessionToken || !mediaStream) {
     return <Navigate to="/" />;
   }
 
-  return <Player sessionId={sessionId} mediaStream={mediaStream} client={scopedClient} />;
+  return <Player sessionId={sessionId} sessionToken={sessionToken} mediaStream={mediaStream} />;
 }
 
 function Player({
   sessionId,
+  sessionToken,
   mediaStream,
-  client,
 }: {
   sessionId: string;
+  sessionToken: string;
   mediaStream: MediaStream;
-  client: import("@supabase/supabase-js").SupabaseClient<
-    import("@/integrations/supabase/types").Database
-  >;
 }) {
+
 
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
