@@ -14,7 +14,7 @@ export const Route = createFileRoute("/admin/editor")({
   component: EditorPage,
 });
 
-type SegmentType = "warmup" | "question" | "scripted" | "improv";
+type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
 
 type Segment = {
   id: string;
@@ -31,8 +31,15 @@ type Segment = {
   updated_at: string;
 };
 
-const SEG_TYPES: SegmentType[] = ["warmup", "question", "scripted", "improv"];
+const RESPONSE_TYPES: SegmentType[] = ["warmup", "question", "scripted", "improv"];
 const PALETTE = ["#3D5E4A", "#2B2B28", "#C44A18"];
+
+const ADD_OPTIONS: { key: SegmentType; label: string }[] = [
+  { key: "audio", label: "Prospect audio" },
+  { key: "question", label: "Question" },
+  { key: "scripted", label: "Scripted read" },
+  { key: "improv", label: "Improv" },
+];
 
 function EditorPage() {
   const navigate = useNavigate();
