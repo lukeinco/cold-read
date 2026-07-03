@@ -1,24 +1,15 @@
-## Goal
-Give you a working invite code so you can complete `/admin/signup` as `lukeinco@gmail.com`. The existing DB trigger will automatically grant superadmin + org membership the moment that email is created.
+## Root cause
+When `lukeinco@gmail.com` is created, the DB trigger `handle_new_user_superadmin_bootstrap` immediately inserts rows into `user_roles` (superadmin) and `org_members`. Then `src/routes/api/admin.signup.ts` also tries to insert into `user_roles` (admin) and `org_members` for the same user/org — collides with the unique key `org_members_user_id_org_id_key`, the route returns 500, and rolls back the auth user. Net result: you can never complete signup as the superadmin email.
 
-## Change
-One migration that inserts a single unused invite code tied to the "TekMyBiz Screening" org:
+## Fix
+Make the signup route tolerate rows the trigger already created.
 
-- `code`: `CR-BOOT01`
-- `org_id`: id of the "TekMyBiz Screening" row in `public.orgs`
-- `used_by`: NULL
-- `expires_at`: `now() + interval '7 days'`
-- Idempotent: `ON CONFLICT (code) DO NOTHING` so re-running is safe
+In `src/routes/api/admin.signup.ts`:
+- Change the `user_roles` insert to an upsert on `(user_id, role)` with `ignoreDuplicates: true`. Superadmin already implies admin capabilities via `has_role` checks per-role, and re-adding `admin` for a superadmin is harmless — but the duplicate `admin` row for a non-bootstrap user is also fine; the conflict we actually need to swallow is the bootstrap case.
+- Change the `org_members` insert to an upsert on `(user_id, org_id)` with `ignoreDuplicates: true`, so the trigger's pre-existing membership doesn't crash the flow.
+- Keep the existing rollback (`auth.admin.deleteUser`) for any *other* error.
 
-No schema changes, no code changes, no RLS changes.
+No schema changes, no RLS changes, no client changes.
 
-## How you sign in after it runs
-1. Go to `/admin/signup`
-2. Invite code: `CR-BOOT01`
-3. Email: `lukeinco@gmail.com`
-4. Password: 8+ characters of your choice
-5. Submit → the `handle_new_user_superadmin_bootstrap` trigger fires → you're superadmin, dropped on `/review` (then `/admin`)
-6. The code auto-consumes on use, so it can't be reused
-
-## Why the earlier login attempt failed
-The auth log shows a `400 invalid_credentials` on `/token` — the account simply doesn't exist yet. Signup has to happen first; there's no separate "create superadmin" path.
+## After the fix
+Retry `/admin/signup` with code `CR-BOOT01`, email `lukeinco@gmail.com`, and a password. Signup succeeds, you're signed in as superadmin, and land on `/admin`.
