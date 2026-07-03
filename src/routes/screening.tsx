@@ -95,7 +95,7 @@ function Player({
           sessionId={sessionId}
           segment={segment}
           sortOrder={index}
-          client={client}
+          sessionToken={sessionToken}
           getBlob={() => latestBlobRef.current}
           onDone={advanceSegment}
         />
