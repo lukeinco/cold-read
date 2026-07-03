@@ -303,9 +303,11 @@ function SegmentEditor({
     countdown !== initial.current.countdown ||
     isActive !== initial.current.isActive;
 
+  const isAudio = type === "audio";
+
   function handleTypeChange(next: SegmentType) {
     setType(next);
-    if (next === "improv") setCountdown("");
+    if (next === "improv" || next === "audio") setCountdown("");
   }
 
   async function handleSave() {
@@ -320,9 +322,9 @@ function SegmentEditor({
     const payload = {
       type,
       cue_label: cueLabel.trim() || "Untitled",
-      cue_color: cueColor,
+      cue_color: isAudio ? "#2B2B28" : cueColor,
       script_text: type === "scripted" ? scriptText : null,
-      countdown_seconds: parsedCountdown,
+      countdown_seconds: isAudio ? null : parsedCountdown,
       is_active: isActive,
     };
     const { data, error } = await supabase
