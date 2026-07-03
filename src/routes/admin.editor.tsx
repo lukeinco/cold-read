@@ -713,7 +713,7 @@ function BrowserRecorder({
       audioCtxRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
+      mic.release();
       streamRef.current = null;
     }
     recorderRef.current = null;
@@ -730,7 +730,7 @@ function BrowserRecorder({
   async function start() {
     setErr(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await mic.acquire();
       streamRef.current = stream;
 
       const ctx = new AudioContext();
