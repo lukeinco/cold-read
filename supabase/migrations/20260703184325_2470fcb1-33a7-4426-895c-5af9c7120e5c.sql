@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Owner can submit their session" ON public.sessions;
