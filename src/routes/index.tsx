@@ -234,7 +234,7 @@ function Landing() {
           <div className="flex items-center gap-5">
             <span>Audio only · No video</span>
             <Link
-              to="/admin/login"
+              to="/admin"
               className="text-charcoal/55 hover:text-charcoal transition-colors"
             >
               Admin
