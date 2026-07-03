@@ -90,10 +90,14 @@ export const Route = createFileRoute("/api/admin/signup")({
             );
           }
 
-          // 4) Grant admin role + org membership
+          // 4) Grant admin role + org membership (idempotent — bootstrap trigger
+          // may have already inserted these rows for the superadmin email)
           const { error: roleErr } = await supabaseAdmin
             .from("user_roles")
-            .insert({ user_id: userId, role: "admin" });
+            .upsert({ user_id: userId, role: "admin" }, {
+              onConflict: "user_id,role",
+              ignoreDuplicates: true,
+            });
           if (roleErr) {
             console.error("admin-signup: role insert failed", roleErr);
             await supabaseAdmin.auth.admin.deleteUser(userId);
@@ -102,7 +106,10 @@ export const Route = createFileRoute("/api/admin/signup")({
 
           const { error: memberErr } = await supabaseAdmin
             .from("org_members")
-            .insert({ user_id: userId, org_id: invite.org_id, role: "admin" });
+            .upsert({ user_id: userId, org_id: invite.org_id, role: "admin" }, {
+              onConflict: "user_id,org_id",
+              ignoreDuplicates: true,
+            });
           if (memberErr) {
             console.error("admin-signup: member insert failed", memberErr);
             await supabaseAdmin.auth.admin.deleteUser(userId);
