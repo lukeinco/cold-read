@@ -13,6 +13,7 @@ import { Route as ScreeningRouteImport } from './routes/screening'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as FinishRouteImport } from './routes/finish'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
 import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
 
 const ScreeningRoute = ScreeningRouteImport.update({
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSubmitSessionRoute = ApiSubmitSessionRouteImport.update({
+  id: '/api/submit-session',
+  path: '/api/submit-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSaveRecordingRoute = ApiSaveRecordingRouteImport.update({
   id: '/api/save-recording',
   path: '/api/save-recording',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/submit-session': typeof ApiSubmitSessionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/submit-session': typeof ApiSubmitSessionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,12 +70,25 @@ export interface FileRoutesById {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/submit-session': typeof ApiSubmitSessionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/finish' | '/review' | '/screening' | '/api/save-recording'
+  fullPaths:
+    | '/'
+    | '/finish'
+    | '/review'
+    | '/screening'
+    | '/api/save-recording'
+    | '/api/submit-session'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/finish' | '/review' | '/screening' | '/api/save-recording'
+  to:
+    | '/'
+    | '/finish'
+    | '/review'
+    | '/screening'
+    | '/api/save-recording'
+    | '/api/submit-session'
   id:
     | '__root__'
     | '/'
@@ -75,6 +96,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/screening'
     | '/api/save-recording'
+    | '/api/submit-session'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,6 +105,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   ScreeningRoute: typeof ScreeningRoute
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
+  ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -115,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/submit-session': {
+      id: '/api/submit-session'
+      path: '/api/submit-session'
+      fullPath: '/api/submit-session'
+      preLoaderRoute: typeof ApiSubmitSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/save-recording': {
       id: '/api/save-recording'
       path: '/api/save-recording'
@@ -131,17 +161,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   ScreeningRoute: ScreeningRoute,
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
+  ApiSubmitSessionRoute: ApiSubmitSessionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

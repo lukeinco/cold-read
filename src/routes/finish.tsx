@@ -23,7 +23,7 @@ const urlSchema = z
   .refine((v) => /linkedin\.com/i.test(v), "Must be a LinkedIn URL");
 
 function FinishScreen() {
-  const { sessionId, scopedClient, clearSession } = useSession();
+  const { sessionId, sessionToken, clearSession } = useSession();
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -32,24 +32,33 @@ function FinishScreen() {
 
   const emailValid = useMemo(() => emailSchema.safeParse(email).success, [email]);
   const urlValid = useMemo(() => urlSchema.safeParse(linkedin).success, [linkedin]);
-  const canSubmit = emailValid && urlValid && !submitting && !!sessionId && !!scopedClient;
+  const canSubmit = emailValid && urlValid && !submitting && !!sessionId && !!sessionToken;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
-    const { error: updateError } = await scopedClient!
-      .from("sessions")
-      .update({
-        email: email.trim(),
-        linkedin_url: linkedin.trim(),
-        submitted_at: new Date().toISOString(),
-      })
-      .eq("id", sessionId!);
 
+    let res: Response;
+    try {
+      res = await fetch("/api/submit-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          sessionToken,
+          email: email.trim(),
+          linkedinUrl: linkedin.trim(),
+        }),
+      });
+    } catch {
+      setError("Couldn't submit. Try again.");
+      setSubmitting(false);
+      return;
+    }
 
-    if (updateError) {
+    if (res.status !== 200) {
       setError("Couldn't submit. Try again.");
       setSubmitting(false);
       return;
