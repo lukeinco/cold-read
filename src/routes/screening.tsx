@@ -1,8 +1,45 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { segments, type Segment } from "@/config/segments";
+import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 
+export type SegmentType = "warmup" | "question" | "scripted" | "improv";
+
+export interface Segment {
+  id: string;
+  type: SegmentType;
+  promptAudioPath: string | null;
+  scriptText: string | null;
+  countdownSeconds: number | null;
+  cueColor: string;
+  cueLabel: string;
+}
+
+async function fetchSegments(): Promise<Segment[]> {
+  const { data, error } = await supabase
+    .from("segments")
+    .select(
+      "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label",
+    )
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    type: r.type as SegmentType,
+    promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
+    scriptText: (r.script_text as string | null) ?? null,
+    countdownSeconds: (r.countdown_seconds as number | null) ?? null,
+    cueColor: r.cue_color as string,
+    cueLabel: r.cue_label as string,
+  }));
+}
+
+const segmentsQueryOptions = queryOptions({
+  queryKey: ["segments", "active"],
+  queryFn: fetchSegments,
+});
 
 export const Route = createFileRoute("/screening")({
   head: () => ({
@@ -11,32 +48,65 @@ export const Route = createFileRoute("/screening")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(segmentsQueryOptions),
   component: Screening,
+  errorComponent: ({ error }) => (
+    <main className="min-h-screen flex items-center justify-center bg-parchment px-6">
+      <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary">
+        Couldn't load screening — {error.message}
+      </p>
+    </main>
+  ),
+  notFoundComponent: () => (
+    <main className="min-h-screen flex items-center justify-center bg-parchment px-6">
+      <p className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/60">
+        No active segments.
+      </p>
+    </main>
+  ),
 });
 
 type Phase = "prompt" | "cue" | "respond" | "upload";
 
 function Screening() {
   const { sessionId, sessionToken, mediaStream } = useSession();
+  const { data: segments } = useSuspenseQuery(segmentsQueryOptions);
 
   if (!sessionId || !sessionToken || !mediaStream) {
     return <Navigate to="/" />;
   }
 
-  return <Player sessionId={sessionId} sessionToken={sessionToken} mediaStream={mediaStream} />;
+  if (segments.length === 0) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-parchment px-6">
+        <p className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/60">
+          No active segments.
+        </p>
+      </main>
+    );
+  }
+
+  return (
+    <Player
+      sessionId={sessionId}
+      sessionToken={sessionToken}
+      mediaStream={mediaStream}
+      segments={segments}
+    />
+  );
 }
 
 function Player({
   sessionId,
   sessionToken,
   mediaStream,
+  segments,
 }: {
   sessionId: string;
   sessionToken: string;
   mediaStream: MediaStream;
+  segments: Segment[];
 }) {
-
-
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("prompt");
@@ -84,7 +154,6 @@ function Player({
             setPhase("upload");
           }}
           onBlob={(blob) => {
-            // stash blob on window-scoped ref via closure below
             latestBlobRef.current = blob;
           }}
         />
@@ -100,7 +169,6 @@ function Player({
           onDone={advanceSegment}
         />
       )}
-
     </main>
   );
 }
@@ -112,21 +180,51 @@ const latestBlobRef: { current: Blob | null } = { current: null };
 
 function PromptPhase({ segment, onDone }: { segment: Segment; onDone: () => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const hasAudio = segment.promptAudioUrl.trim().length > 0;
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
-    if (!hasAudio) return;
+    let cancelled = false;
+    const path = segment.promptAudioPath?.trim();
+    if (!path) {
+      setResolvedUrl(null);
+      setResolved(true);
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase.storage
+        .from("prompts")
+        .createSignedUrl(path, 60 * 10);
+      if (cancelled) return;
+      if (error || !data?.signedUrl) {
+        setResolvedUrl(null);
+      } else {
+        setResolvedUrl(data.signedUrl);
+      }
+      setResolved(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [segment.promptAudioPath]);
+
+  useEffect(() => {
+    if (!resolvedUrl) return;
     const el = audioRef.current;
     if (!el) return;
     el.play().catch(() => {
-      // Autoplay may be blocked; fall back to a manual continue.
+      // Autoplay may be blocked; user can wait for onEnded or use fallback.
     });
-  }, [hasAudio]);
+  }, [resolvedUrl]);
+
+  if (!resolved) {
+    return <section className="min-h-screen bg-parchment" />;
+  }
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-parchment px-6">
-      {hasAudio ? (
-        <audio ref={audioRef} src={segment.promptAudioUrl} onEnded={onDone} className="hidden" />
+      {resolvedUrl ? (
+        <audio ref={audioRef} src={resolvedUrl} onEnded={onDone} className="hidden" />
       ) : (
         <div className="text-center">
           <p className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/55">
@@ -155,7 +253,6 @@ function CuePhase({ segment, onDone }: { segment: Segment; onDone: () => void })
 
   const isImprov = segment.type === "improv";
   const label = isImprov ? "You're off script now — Improvise" : segment.cueLabel;
-  // Iron oxide gets parchment text; darker cues also get parchment.
   const textColor = "#F5F0E8";
 
   return (
@@ -194,6 +291,7 @@ function RespondPhase({
   const chunksRef = useRef<BlobPart[]>([]);
   const stoppedRef = useRef(false);
   const [remaining, setRemaining] = useState(segment.countdownSeconds ?? 0);
+  const [recording, setRecording] = useState(false);
   const totalMs = (segment.countdownSeconds ?? 0) * 1000;
 
   const stopAndFinish = useCallback(() => {
@@ -203,9 +301,9 @@ function RespondPhase({
     if (rec && rec.state !== "inactive") {
       rec.stop();
     }
+    setRecording(false);
   }, []);
 
-  // Start a FRESH MediaRecorder per segment.
   useEffect(() => {
     chunksRef.current = [];
     stoppedRef.current = false;
@@ -223,7 +321,9 @@ function RespondPhase({
     rec.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
     };
+    rec.onstart = () => setRecording(true);
     rec.onstop = () => {
+      setRecording(false);
       const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
       onBlob(blob);
       onDone(blob);
@@ -243,7 +343,6 @@ function RespondPhase({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Countdown timer for scripted/warmup segments.
   useEffect(() => {
     if (segment.countdownSeconds == null) return;
     const start = performance.now();
@@ -260,7 +359,6 @@ function RespondPhase({
     return () => window.clearInterval(id);
   }, [segment.countdownSeconds, stopAndFinish]);
 
-  // Safety cap for improv segments (no countdown).
   useEffect(() => {
     if (segment.countdownSeconds != null) return;
     const t = window.setTimeout(stopAndFinish, 120_000);
@@ -272,13 +370,19 @@ function RespondPhase({
   const secondsDisplay = hasCountdown ? Math.ceil(remaining) : null;
 
   return (
-    <section className="min-h-screen flex flex-col bg-parchment">
-      {/* Recording indicator */}
-      <div className="flex items-center gap-3 px-6 pt-6 font-mono text-[11px] uppercase tracking-[0.28em] text-iron">
-        <span className="relative inline-flex h-2.5 w-2.5">
-          <span className="absolute inset-0 rounded-full bg-iron opacity-70 animate-ping" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-iron" />
-        </span>
+    <section className="min-h-screen flex flex-col bg-parchment relative">
+      {/* Small REC chip while recording */}
+      {recording && (
+        <div className="pointer-events-none absolute left-6 top-6 z-40 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.28em] text-iron">
+          <span className="relative inline-flex h-2 w-2">
+            <span className="absolute inset-0 rounded-full bg-iron opacity-70 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-iron" />
+          </span>
+          REC
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 px-6 pt-6 font-mono text-[11px] uppercase tracking-[0.28em] text-iron opacity-0">
         Recording
       </div>
 
@@ -299,7 +403,6 @@ function RespondPhase({
         )}
       </div>
 
-      {/* Footer controls */}
       <div className="px-6 pb-10">
         {hasCountdown ? (
           <div className="mx-auto max-w-3xl">
@@ -390,8 +493,6 @@ function UploadPhase({
     console.error("Upload failed after retries", lastErr);
     setStatus("failed");
   }, [getBlob, onDone, segment.id, sessionId, sessionToken, sortOrder]);
-
-
 
   useEffect(() => {
     if (attemptedRef.current) return;
