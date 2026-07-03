@@ -46,7 +46,7 @@ function AdminHub() {
   if (!session) return null;
 
   const links: Array<{ to: string; label: string; desc: string }> = [
-    { to: "/review", label: "Review", desc: "Listen to submitted screenings" },
+    { to: "/admin/review", label: "Review", desc: "Listen to submitted screenings" },
     { to: "/admin/editor", label: "Editor", desc: "Manage segments & prompts" },
   ];
   if (isSuperadmin) {
@@ -68,6 +68,10 @@ function AdminHub() {
           </button>
         </header>
 
+        <div className="mt-8">
+          <CopyScreeningLinkButton />
+        </div>
+
         <ul className="mt-10 divide-y divide-charcoal/15 border-y border-charcoal/15">
           {links.map((l) => (
             <li key={l.to}>
@@ -87,3 +91,38 @@ function AdminHub() {
     </main>
   );
 }
+
+function CopyScreeningLinkButton() {
+  const [copied, setCopied] = useState(false);
+  const url =
+    typeof window !== "undefined" ? `${window.location.origin}/` : "/";
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // fallback: select-and-prompt
+      window.prompt("Copy screening link", url);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4 border border-charcoal/25 p-4">
+      <div className="flex-1 min-w-0">
+        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
+          Screening link
+        </div>
+        <div className="mt-1 font-mono text-sm text-charcoal truncate">{url}</div>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-parchment px-4 py-2 hover:bg-iron/90 transition-colors"
+      >
+        {copied ? "Copied ✓" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
