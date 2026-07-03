@@ -865,3 +865,178 @@ function BrowserRecorder({
     </div>
   );
 }
+
+/* ------------------------------ Sidebar cards ----------------------------- */
+
+function SegmentCard({
+  segment,
+  selected,
+  dragging,
+  onSelect,
+  onDragStart,
+  onDrop,
+}: {
+  segment: Segment;
+  selected: boolean;
+  dragging: boolean;
+  onSelect: () => void;
+  onDragStart: () => void;
+  onDrop: () => void;
+}) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const isAudio = segment.type === "audio";
+  const path = segment.prompt_audio_path;
+
+  useEffect(() => {
+    let alive = true;
+    setSignedUrl(null);
+    if (!isAudio || !path) return;
+    supabase.storage
+      .from("prompts")
+      .createSignedUrl(path, 60 * 10)
+      .then(({ data }) => {
+        if (alive) setSignedUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [isAudio, path]);
+
+  const commonProps = {
+    draggable: true,
+    onDragStart,
+    onDragOver: (e: React.DragEvent) => e.preventDefault(),
+    onDrop,
+    onClick: onSelect,
+    className: `cursor-pointer border-b border-charcoal/10 transition-colors ${
+      dragging ? "opacity-40" : ""
+    }`,
+  };
+
+  if (isAudio) {
+    return (
+      <li
+        {...commonProps}
+        className={`${commonProps.className} ${
+          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+        }`}
+        style={{ background: "#2B2B28" }}
+      >
+        <div className="px-4 py-3 text-parchment">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.28em]" style={{ color: "#3D5E4A" }}>
+              ● Call
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/60">
+              Prospect audio
+            </span>
+            {!segment.is_active && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/40">
+                · inactive
+              </span>
+            )}
+            <span
+              className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em]"
+              style={{ color: path ? "#3D5E4A" : "#C44A18" }}
+              title={path ? "Audio attached" : "No audio"}
+            >
+              {path ? "♪ audio" : "no audio"}
+            </span>
+          </div>
+          <div className="mt-1 font-serif text-sm text-parchment/95">
+            {segment.cue_label}
+          </div>
+          {signedUrl && (
+            <audio
+              controls
+              src={signedUrl}
+              className="mt-2 w-full h-8"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li
+      {...commonProps}
+      className={`${commonProps.className} px-4 py-3 ${
+        selected ? "bg-charcoal/[0.06]" : "hover:bg-charcoal/[0.03]"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="inline-block h-2 w-2 rounded-full"
+          style={{ background: segment.cue_color }}
+          aria-hidden
+        />
+        <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
+          {segment.type}
+        </span>
+        {!segment.is_active && (
+          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
+            · inactive
+          </span>
+        )}
+        {segment.countdown_seconds != null && (
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
+            {segment.countdown_seconds}s
+          </span>
+        )}
+      </div>
+      <div className="mt-1 font-serif text-sm text-charcoal">
+        {segment.cue_label}
+      </div>
+      {segment.script_text && (
+        <div className="mt-1 font-mono text-[10px] text-charcoal/60 line-clamp-2">
+          {segment.script_text}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/* ------------------------------ Add step menu ----------------------------- */
+
+function AddSegmentMenu({ onAdd }: { onAdd: (kind: SegmentType) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-4 py-3 hover:bg-iron/90 transition-colors"
+      >
+        + Add step
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 bottom-full mb-2 border border-charcoal/25 bg-parchment shadow-lg z-10">
+          {ADD_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                setOpen(false);
+                onAdd(opt.key);
+              }}
+              className="w-full text-left px-4 py-3 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal hover:bg-charcoal/[0.06] border-b border-charcoal/10 last:border-b-0"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
