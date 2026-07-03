@@ -13,6 +13,7 @@ import { Route as ScreeningRouteImport } from './routes/screening'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as FinishRouteImport } from './routes/finish'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
 import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
 import { Route as AdminSignupRouteImport } from './routes/admin.signup'
@@ -38,6 +39,11 @@ const FinishRoute = FinishRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubmitSessionRoute = ApiSubmitSessionRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
+  '/admin': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/api/save-recording'
     | '/api/submit-session'
+    | '/admin/'
     | '/api/admin/signup'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/api/save-recording'
     | '/api/submit-session'
+    | '/admin'
     | '/api/admin/signup'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/api/save-recording'
     | '/api/submit-session'
+    | '/admin/'
     | '/api/admin/signup'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   AdminSignupRoute: typeof AdminSignupRoute
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
   ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiAdminSignupRoute: typeof ApiAdminSignupRoute
 }
 
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/submit-session': {
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSignupRoute: AdminSignupRoute,
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
   ApiSubmitSessionRoute: ApiSubmitSessionRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiAdminSignupRoute: ApiAdminSignupRoute,
 }
 export const routeTree = rootRouteImport
