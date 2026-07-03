@@ -13,6 +13,7 @@ import { Route as ScreeningRouteImport } from './routes/screening'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as FinishRouteImport } from './routes/finish'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
 
 const ScreeningRoute = ScreeningRouteImport.update({
   id: '/screening',
@@ -34,18 +35,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSaveRecordingRoute = ApiSaveRecordingRouteImport.update({
+  id: '/api/save-recording',
+  path: '/api/save-recording',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
+  '/api/save-recording': typeof ApiSaveRecordingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
+  '/api/save-recording': typeof ApiSaveRecordingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
+  '/api/save-recording': typeof ApiSaveRecordingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/finish' | '/review' | '/screening'
+  fullPaths: '/' | '/finish' | '/review' | '/screening' | '/api/save-recording'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/finish' | '/review' | '/screening'
-  id: '__root__' | '/' | '/finish' | '/review' | '/screening'
+  to: '/' | '/finish' | '/review' | '/screening' | '/api/save-recording'
+  id:
+    | '__root__'
+    | '/'
+    | '/finish'
+    | '/review'
+    | '/screening'
+    | '/api/save-recording'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   FinishRoute: typeof FinishRoute
   ReviewRoute: typeof ReviewRoute
   ScreeningRoute: typeof ScreeningRoute
+  ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/save-recording': {
+      id: '/api/save-recording'
+      path: '/api/save-recording'
+      fullPath: '/api/save-recording'
+      preLoaderRoute: typeof ApiSaveRecordingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   FinishRoute: FinishRoute,
   ReviewRoute: ReviewRoute,
   ScreeningRoute: ScreeningRoute,
+  ApiSaveRecordingRoute: ApiSaveRecordingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
