@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
+
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -230,9 +231,18 @@ function Landing() {
       <footer className="border-t border-charcoal/15 px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/55">
           <span>Cold Read</span>
-          <span>Audio only · No video</span>
+          <div className="flex items-center gap-5">
+            <span>Audio only · No video</span>
+            <Link
+              to="/admin/login"
+              className="text-charcoal/55 hover:text-charcoal transition-colors"
+            >
+              Admin
+            </Link>
+          </div>
         </div>
       </footer>
+
     </main>
   );
 }
