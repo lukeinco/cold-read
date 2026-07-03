@@ -115,16 +115,17 @@ function EditorDashboard() {
     void load();
   }, [load]);
 
-  async function handleAdd() {
+  async function handleAdd(kind: SegmentType) {
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
+    const isAudio = kind === "audio";
     const { data, error } = await supabase
       .from("segments")
       .insert({
         sort_order: nextOrder,
-        type: "question",
-        cue_color: "#3D5E4A",
-        cue_label: "New segment",
+        type: kind,
+        cue_color: isAudio ? "#2B2B28" : "#3D5E4A",
+        cue_label: isAudio ? "Prospect audio" : "New segment",
         is_active: false,
       })
       .select("*")
