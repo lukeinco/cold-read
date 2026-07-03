@@ -18,6 +18,7 @@ import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-sessio
 import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
 import { Route as AdminSignupRouteImport } from './routes/admin.signup'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminEditorRouteImport } from './routes/admin.editor'
 import { Route as AdminCodesRouteImport } from './routes/admin.codes'
 import { Route as ApiAdminSignupRouteImport } from './routes/api/admin.signup'
 
@@ -66,6 +67,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminEditorRoute = AdminEditorRouteImport.update({
+  id: '/admin/editor',
+  path: '/admin/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCodesRoute = AdminCodesRouteImport.update({
   id: '/admin/codes',
   path: '/admin/codes',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/admin/codes': typeof AdminCodesRoute
+  '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/admin/codes': typeof AdminCodesRoute
+  '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/review': typeof ReviewRoute
   '/screening': typeof ScreeningRoute
   '/admin/codes': typeof AdminCodesRoute
+  '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/signup': typeof AdminSignupRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/screening'
     | '/admin/codes'
+    | '/admin/editor'
     | '/admin/login'
     | '/admin/signup'
     | '/api/save-recording'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/screening'
     | '/admin/codes'
+    | '/admin/editor'
     | '/admin/login'
     | '/admin/signup'
     | '/api/save-recording'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/screening'
     | '/admin/codes'
+    | '/admin/editor'
     | '/admin/login'
     | '/admin/signup'
     | '/api/save-recording'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   ReviewRoute: typeof ReviewRoute
   ScreeningRoute: typeof ScreeningRoute
   AdminCodesRoute: typeof AdminCodesRoute
+  AdminEditorRoute: typeof AdminEditorRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSignupRoute: typeof AdminSignupRoute
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/editor': {
+      id: '/admin/editor'
+      path: '/admin/editor'
+      fullPath: '/admin/editor'
+      preLoaderRoute: typeof AdminEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/codes': {
       id: '/admin/codes'
       path: '/admin/codes'
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewRoute: ReviewRoute,
   ScreeningRoute: ScreeningRoute,
   AdminCodesRoute: AdminCodesRoute,
+  AdminEditorRoute: AdminEditorRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSignupRoute: AdminSignupRoute,
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
