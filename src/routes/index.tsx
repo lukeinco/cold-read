@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
+import { unlockPromptPlayer } from "@/lib/promptPlayer";
 
 
 export const Route = createFileRoute("/")({
