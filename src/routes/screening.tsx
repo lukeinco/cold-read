@@ -338,16 +338,14 @@ function UploadPhase({
   sessionId,
   segment,
   sortOrder,
-  client,
+  sessionToken,
   getBlob,
   onDone,
 }: {
   sessionId: string;
   segment: Segment;
   sortOrder: number;
-  client: import("@supabase/supabase-js").SupabaseClient<
-    import("@/integrations/supabase/types").Database
-  >;
+  sessionToken: string;
   getBlob: () => Blob | null;
   onDone: () => void;
 }) {
@@ -360,24 +358,26 @@ function UploadPhase({
       setStatus("failed");
       return;
     }
-    const path = `${sessionId}/${segment.id}.webm`;
     setStatus("saving");
 
     let lastErr: unknown = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const { error: uploadErr } = await client.storage
-          .from("recordings")
-          .upload(path, blob, { contentType: blob.type || "audio/webm", upsert: true });
-        if (uploadErr) throw uploadErr;
+        const form = new FormData();
+        form.append("sessionId", sessionId);
+        form.append("sessionToken", sessionToken);
+        form.append("segmentId", segment.id);
+        form.append("sortOrder", String(sortOrder));
+        form.append("audio", blob, `${segment.id}.webm`);
 
-        const { error: insertErr } = await client.from("responses").insert({
-          session_id: sessionId,
-          segment_id: segment.id,
-          sort_order: sortOrder,
-          storage_path: path,
+        const res = await fetch("/api/save-recording", {
+          method: "POST",
+          body: form,
         });
-        if (insertErr) throw insertErr;
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`save-recording failed: ${res.status} ${body}`);
+        }
 
         onDone();
         return;
@@ -389,7 +389,8 @@ function UploadPhase({
     }
     console.error("Upload failed after retries", lastErr);
     setStatus("failed");
-  }, [client, getBlob, onDone, segment.id, sessionId, sortOrder]);
+  }, [getBlob, onDone, segment.id, sessionId, sessionToken, sortOrder]);
+
 
 
   useEffect(() => {
