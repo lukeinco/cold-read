@@ -49,6 +49,51 @@ export type Database = {
           },
         ]
       }
+      segments: {
+        Row: {
+          countdown_seconds: number | null
+          created_at: string
+          cue_color: string
+          cue_label: string
+          id: string
+          is_active: boolean
+          org_id: string | null
+          prompt_audio_path: string | null
+          script_text: string | null
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          countdown_seconds?: number | null
+          created_at?: string
+          cue_color: string
+          cue_label: string
+          id?: string
+          is_active?: boolean
+          org_id?: string | null
+          prompt_audio_path?: string | null
+          script_text?: string | null
+          sort_order: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          countdown_seconds?: number | null
+          created_at?: string
+          cue_color?: string
+          cue_label?: string
+          id?: string
+          is_active?: boolean
+          org_id?: string | null
+          prompt_audio_path?: string | null
+          script_text?: string | null
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           client_token: string
