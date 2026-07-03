@@ -529,6 +529,3 @@ function typeLabel(t: string | undefined) {
   if (t === "improv") return "Improv";
   return t ?? "—";
 }
-
-// Suppress unused import warning if useMemo isn't strictly used
-void useMemo;
