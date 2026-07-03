@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
+import { getPromptPlayer } from "@/lib/promptPlayer";
 
-export type SegmentType = "warmup" | "question" | "scripted" | "improv";
+export type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
 
 export interface Segment {
   id: string;
@@ -67,7 +68,7 @@ export const Route = createFileRoute("/screening")({
   ),
 });
 
-type Phase = "prompt" | "cue" | "respond" | "upload";
+type Phase = "cue" | "respond" | "upload";
 
 function Screening() {
   const { sessionId, sessionToken } = useSession();
@@ -111,34 +112,49 @@ function Player({
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("prompt");
+  const [phase, setPhase] = useState<Phase>("cue");
 
   const segment = segments[index];
   const isLast = index === segments.length - 1;
+
+  // Progress counts response steps only.
+  const responseSteps = useMemo(
+    () => segments.filter((s) => s.type !== "audio"),
+    [segments],
+  );
+  const responseIndex = useMemo(() => {
+    if (segment.type === "audio") return -1;
+    return responseSteps.findIndex((s) => s.id === segment.id);
+  }, [segment, responseSteps]);
 
   const advanceSegment = useCallback(() => {
     if (isLast) {
       navigate({ to: "/finish" });
     } else {
       setIndex((i) => i + 1);
-      setPhase("prompt");
+      setPhase("cue");
     }
   }, [isLast, navigate]);
 
+  // Audio step: render call screen only.
+  if (segment.type === "audio") {
+    return (
+      <main className="min-h-screen relative">
+        <AudioCallPhase key={`audio-${segment.id}`} segment={segment} onDone={advanceSegment} />
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen relative">
-      {/* Progress indicator */}
-      <div className="pointer-events-none absolute right-6 top-6 z-40 font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
-        {String(index + 1).padStart(2, "0")} / {String(segments.length).padStart(2, "0")}
-      </div>
-
-      {phase === "prompt" && (
-        <PromptPhase
-          key={`prompt-${segment.id}`}
-          segment={segment}
-          onDone={() => setPhase("cue")}
-        />
+      {/* Progress indicator — counts response steps only */}
+      {responseIndex >= 0 && (
+        <div className="pointer-events-none absolute right-6 top-6 z-40 font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+          {String(responseIndex + 1).padStart(2, "0")} /{" "}
+          {String(responseSteps.length).padStart(2, "0")}
+        </div>
       )}
+
       {phase === "cue" && (
         <CuePhase
           key={`cue-${segment.id}`}
@@ -178,69 +194,113 @@ function Player({
 // Blob handoff between Respond → Upload phases without re-render churn.
 const latestBlobRef: { current: Blob | null } = { current: null };
 
-/* --------------------------------- Prompt --------------------------------- */
+/* ------------------------------ Audio call ------------------------------- */
 
-function PromptPhase({ segment, onDone }: { segment: Segment; onDone: () => void }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
-  const [resolved, setResolved] = useState(false);
+function AudioCallPhase({ segment, onDone }: { segment: Segment; onDone: () => void }) {
+  const [elapsed, setElapsed] = useState(0);
+  const doneRef = useRef(false);
+
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onDone();
+  }, [onDone]);
 
   useEffect(() => {
     let cancelled = false;
+    const player = getPromptPlayer();
     const path = segment.promptAudioPath?.trim();
-    if (!path) {
-      setResolvedUrl(null);
-      setResolved(true);
-      return;
-    }
+
+    // 8s safety timeout: if playback hasn't started, advance anyway.
+    let started = false;
+    const safety = window.setTimeout(() => {
+      if (!started && !cancelled) {
+        console.warn(`[audio-step ${segment.id}] playback did not start within 8s`);
+        finish();
+      }
+    }, 8000);
+
+    const onPlay = () => {
+      started = true;
+      window.clearTimeout(safety);
+    };
+    const onEnded = () => finish();
+    const onError = () => {
+      console.warn(`[audio-step ${segment.id}] playback error`);
+      finish();
+    };
+    player.addEventListener("play", onPlay);
+    player.addEventListener("ended", onEnded);
+    player.addEventListener("error", onError);
+
     (async () => {
+      if (!path) {
+        console.warn(`[audio-step ${segment.id}] no prompt_audio_path`);
+        finish();
+        return;
+      }
       const { data, error } = await supabase.storage
         .from("prompts")
         .createSignedUrl(path, 60 * 10);
       if (cancelled) return;
       if (error || !data?.signedUrl) {
-        setResolvedUrl(null);
-      } else {
-        setResolvedUrl(data.signedUrl);
+        console.warn(`[audio-step ${segment.id}] signing failed`, error?.message);
+        finish();
+        return;
       }
-      setResolved(true);
+      try {
+        player.src = data.signedUrl;
+        player.currentTime = 0;
+        await player.play();
+      } catch (e) {
+        console.warn(`[audio-step ${segment.id}] play() rejected`, e);
+        finish();
+      }
     })();
+
     return () => {
       cancelled = true;
+      window.clearTimeout(safety);
+      player.removeEventListener("play", onPlay);
+      player.removeEventListener("ended", onEnded);
+      player.removeEventListener("error", onError);
+      try {
+        player.pause();
+      } catch {
+        /* noop */
+      }
     };
-  }, [segment.promptAudioPath]);
+  }, [segment.id, segment.promptAudioPath, finish]);
 
   useEffect(() => {
-    if (!resolvedUrl) return;
-    const el = audioRef.current;
-    if (!el) return;
-    el.play().catch(() => {
-      // Autoplay may be blocked; user can wait for onEnded or use fallback.
-    });
-  }, [resolvedUrl]);
+    const start = performance.now();
+    const id = window.setInterval(() => {
+      setElapsed(Math.floor((performance.now() - start) / 1000));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
 
-  if (!resolved) {
-    return <section className="min-h-screen bg-parchment" />;
-  }
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-parchment px-6">
-      {resolvedUrl ? (
-        <audio ref={audioRef} src={resolvedUrl} onEnded={onDone} className="hidden" />
-      ) : (
-        <div className="text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/55">
-            ‹audio pending›
-          </p>
-          <button
-            onClick={onDone}
-            className="mt-8 inline-flex items-center gap-3 border border-charcoal bg-transparent px-6 py-3 font-mono text-xs uppercase tracking-[0.24em] text-charcoal transition-colors hover:bg-charcoal hover:text-parchment"
-          >
-            <span>Continue</span>
-            <span aria-hidden>→</span>
-          </button>
-        </div>
-      )}
+    <section
+      className="min-h-screen flex items-center justify-center px-6"
+      style={{ backgroundColor: "#2B2B28" }}
+    >
+      <div
+        className="flex items-center gap-3 text-parchment"
+        style={{ fontFamily: "var(--font-mono), 'IBM Plex Mono', monospace" }}
+      >
+        <span
+          className="inline-block h-2 w-2 rounded-full"
+          style={{ backgroundColor: "#3D5E4A" }}
+          aria-hidden
+        />
+        <span className="text-sm uppercase tracking-[0.28em] tabular-nums">
+          Call in progress — {mm}:{ss}
+        </span>
+      </div>
     </section>
   );
 }

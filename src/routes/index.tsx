@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
+import { unlockPromptPlayer } from "@/lib/promptPlayer";
 
 
 export const Route = createFileRoute("/")({
@@ -46,6 +47,9 @@ function Landing() {
     // 1) Mic access — must be inside the user gesture
     try {
       await mic.acquire();
+      // Unlock the shared prompt audio element inside this user gesture so
+      // every prospect-audio step in the screening can autoplay without a tap.
+      await unlockPromptPlayer();
     } catch (err) {
       const e = err as DOMException;
       console.error("[mic] acquire failed:", e.name, e.message);

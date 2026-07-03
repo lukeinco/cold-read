@@ -14,7 +14,7 @@ export const Route = createFileRoute("/admin/editor")({
   component: EditorPage,
 });
 
-type SegmentType = "warmup" | "question" | "scripted" | "improv";
+type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
 
 type Segment = {
   id: string;
@@ -31,8 +31,15 @@ type Segment = {
   updated_at: string;
 };
 
-const SEG_TYPES: SegmentType[] = ["warmup", "question", "scripted", "improv"];
+const RESPONSE_TYPES: SegmentType[] = ["warmup", "question", "scripted", "improv"];
 const PALETTE = ["#3D5E4A", "#2B2B28", "#C44A18"];
+
+const ADD_OPTIONS: { key: SegmentType; label: string }[] = [
+  { key: "audio", label: "Prospect audio" },
+  { key: "question", label: "Question" },
+  { key: "scripted", label: "Scripted read" },
+  { key: "improv", label: "Improv" },
+];
 
 function EditorPage() {
   const navigate = useNavigate();
@@ -108,16 +115,17 @@ function EditorDashboard() {
     void load();
   }, [load]);
 
-  async function handleAdd() {
+  async function handleAdd(kind: SegmentType) {
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
+    const isAudio = kind === "audio";
     const { data, error } = await supabase
       .from("segments")
       .insert({
         sort_order: nextOrder,
-        type: "question",
-        cue_color: "#3D5E4A",
-        cue_label: "New segment",
+        type: kind,
+        cue_color: isAudio ? "#2B2B28" : "#3D5E4A",
+        cue_label: isAudio ? "Prospect audio" : "New segment",
         is_active: false,
       })
       .select("*")
@@ -218,61 +226,20 @@ function EditorDashboard() {
             ) : (
               <ul>
                 {segments.map((s) => (
-                  <li
+                  <SegmentCard
                     key={s.id}
-                    draggable
+                    segment={s}
+                    selected={selectedId === s.id}
+                    dragging={dragId === s.id}
+                    onSelect={() => setSelectedId(s.id)}
                     onDragStart={() => setDragId(s.id)}
-                    onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDropReorder(s.id)}
-                    onClick={() => setSelectedId(s.id)}
-                    className={`cursor-pointer border-b border-charcoal/10 px-4 py-3 transition-colors ${
-                      selectedId === s.id
-                        ? "bg-charcoal/[0.06]"
-                        : "hover:bg-charcoal/[0.03]"
-                    } ${dragId === s.id ? "opacity-40" : ""}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block h-2 w-2 rounded-full"
-                        style={{ background: s.cue_color }}
-                        aria-hidden
-                      />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
-                        {s.type}
-                      </span>
-                      {!s.is_active && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
-                          · inactive
-                        </span>
-                      )}
-                      {s.prompt_audio_path && (
-                        <span
-                          className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-juniper"
-                          title="Audio attached"
-                        >
-                          ♪
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 font-serif text-sm text-charcoal">
-                      {s.cue_label}
-                    </div>
-                    {s.script_text && (
-                      <div className="mt-1 font-mono text-[10px] text-charcoal/60 line-clamp-2">
-                        {s.script_text}
-                      </div>
-                    )}
-                  </li>
+                  />
                 ))}
               </ul>
             )}
             <div className="p-4">
-              <button
-                onClick={handleAdd}
-                className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-4 py-3 hover:bg-iron/90 transition-colors"
-              >
-                + Add segment
-              </button>
+              <AddSegmentMenu onAdd={(k) => handleAdd(k)} />
             </div>
           </aside>
 
@@ -336,9 +303,11 @@ function SegmentEditor({
     countdown !== initial.current.countdown ||
     isActive !== initial.current.isActive;
 
+  const isAudio = type === "audio";
+
   function handleTypeChange(next: SegmentType) {
     setType(next);
-    if (next === "improv") setCountdown("");
+    if (next === "improv" || next === "audio") setCountdown("");
   }
 
   async function handleSave() {
@@ -353,9 +322,9 @@ function SegmentEditor({
     const payload = {
       type,
       cue_label: cueLabel.trim() || "Untitled",
-      cue_color: cueColor,
+      cue_color: isAudio ? "#2B2B28" : cueColor,
       script_text: type === "scripted" ? scriptText : null,
-      countdown_seconds: parsedCountdown,
+      countdown_seconds: isAudio ? null : parsedCountdown,
       is_active: isActive,
     };
     const { data, error } = await supabase
@@ -407,58 +376,66 @@ function SegmentEditor({
       <div className="mt-6 grid gap-6">
         <Field label="Type">
           <div className="flex flex-wrap gap-2">
-            {SEG_TYPES.map((t) => (
+            {ADD_OPTIONS.map((opt) => (
               <button
-                key={t}
-                onClick={() => handleTypeChange(t)}
+                key={opt.key}
+                onClick={() => handleTypeChange(opt.key)}
                 className={`font-mono text-[11px] uppercase tracking-[0.24em] px-3 py-2 border transition-colors ${
-                  type === t
+                  type === opt.key
                     ? "bg-charcoal text-parchment border-charcoal"
                     : "border-charcoal/30 text-charcoal hover:border-charcoal"
                 }`}
               >
-                {t}
+                {opt.label}
               </button>
             ))}
           </div>
         </Field>
 
-        <Field label="Cue label">
+        <Field label={isAudio ? "Admin label (internal only)" : "Cue label"}>
           <input
             value={cueLabel}
             onChange={(e) => setCueLabel(e.target.value)}
+            placeholder={isAudio ? "e.g. Gatekeeper opener" : ""}
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
           />
+          {isAudio && (
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Never shown to candidates.
+            </p>
+          )}
         </Field>
 
-        <Field label="Cue color">
-          <div className="flex items-center gap-3">
-            {PALETTE.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCueColor(c)}
-                className={`h-8 w-8 rounded-full border-2 transition-all ${
-                  cueColor.toLowerCase() === c.toLowerCase()
-                    ? "border-charcoal scale-110"
-                    : "border-charcoal/20"
-                }`}
-                style={{ background: c }}
-                aria-label={c}
+        {!isAudio && (
+          <Field label="Cue color">
+            <div className="flex items-center gap-3">
+              {PALETTE.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCueColor(c)}
+                  className={`h-8 w-8 rounded-full border-2 transition-all ${
+                    cueColor.toLowerCase() === c.toLowerCase()
+                      ? "border-charcoal scale-110"
+                      : "border-charcoal/20"
+                  }`}
+                  style={{ background: c }}
+                  aria-label={c}
+                />
+              ))}
+              <input
+                value={cueColor}
+                onChange={(e) => setCueColor(e.target.value)}
+                placeholder="#RRGGBB"
+                className="ml-2 w-28 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 font-mono text-sm text-charcoal focus:outline-none"
               />
-            ))}
-            <input
-              value={cueColor}
-              onChange={(e) => setCueColor(e.target.value)}
-              placeholder="#RRGGBB"
-              className="ml-2 w-28 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 font-mono text-sm text-charcoal focus:outline-none"
-            />
-            <span
-              className="ml-2 inline-block h-6 w-6 border border-charcoal/20"
-              style={{ background: cueColor }}
-              aria-hidden
-            />
-          </div>
-        </Field>
+              <span
+                className="ml-2 inline-block h-6 w-6 border border-charcoal/20"
+                style={{ background: cueColor }}
+                aria-hidden
+              />
+            </div>
+          </Field>
+        )}
 
         {type === "scripted" && (
           <Field label="Script text">
@@ -471,18 +448,20 @@ function SegmentEditor({
           </Field>
         )}
 
-        <Field label="Countdown (seconds)">
-          <input
-            type="number"
-            min={0}
-            value={countdown}
-            onChange={(e) => setCountdown(e.target.value)}
-            className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
-          />
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-            Leave empty for no timer — improv should be empty.
-          </p>
-        </Field>
+        {!isAudio && (
+          <Field label="Countdown (seconds)">
+            <input
+              type="number"
+              min={0}
+              value={countdown}
+              onChange={(e) => setCountdown(e.target.value)}
+              className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+            />
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Leave empty for no timer — improv should be empty.
+            </p>
+          </Field>
+        )}
 
         <Field label="Active">
           <label className="inline-flex items-center gap-3 cursor-pointer">
@@ -498,7 +477,9 @@ function SegmentEditor({
           </label>
         </Field>
 
-        <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
+        {isAudio && (
+          <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
+        )}
 
         <div className="flex items-center justify-between border-t border-charcoal/15 pt-6">
           <button
@@ -880,6 +861,181 @@ function BrowserRecorder({
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
           {err}
         </p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------ Sidebar cards ----------------------------- */
+
+function SegmentCard({
+  segment,
+  selected,
+  dragging,
+  onSelect,
+  onDragStart,
+  onDrop,
+}: {
+  segment: Segment;
+  selected: boolean;
+  dragging: boolean;
+  onSelect: () => void;
+  onDragStart: () => void;
+  onDrop: () => void;
+}) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const isAudio = segment.type === "audio";
+  const path = segment.prompt_audio_path;
+
+  useEffect(() => {
+    let alive = true;
+    setSignedUrl(null);
+    if (!isAudio || !path) return;
+    supabase.storage
+      .from("prompts")
+      .createSignedUrl(path, 60 * 10)
+      .then(({ data }) => {
+        if (alive) setSignedUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [isAudio, path]);
+
+  const commonProps = {
+    draggable: true,
+    onDragStart,
+    onDragOver: (e: React.DragEvent) => e.preventDefault(),
+    onDrop,
+    onClick: onSelect,
+    className: `cursor-pointer border-b border-charcoal/10 transition-colors ${
+      dragging ? "opacity-40" : ""
+    }`,
+  };
+
+  if (isAudio) {
+    return (
+      <li
+        {...commonProps}
+        className={`${commonProps.className} ${
+          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+        }`}
+        style={{ background: "#2B2B28" }}
+      >
+        <div className="px-4 py-3 text-parchment">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.28em]" style={{ color: "#3D5E4A" }}>
+              ● Call
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/60">
+              Prospect audio
+            </span>
+            {!segment.is_active && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/40">
+                · inactive
+              </span>
+            )}
+            <span
+              className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em]"
+              style={{ color: path ? "#3D5E4A" : "#C44A18" }}
+              title={path ? "Audio attached" : "No audio"}
+            >
+              {path ? "♪ audio" : "no audio"}
+            </span>
+          </div>
+          <div className="mt-1 font-serif text-sm text-parchment/95">
+            {segment.cue_label}
+          </div>
+          {signedUrl && (
+            <audio
+              controls
+              src={signedUrl}
+              className="mt-2 w-full h-8"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li
+      {...commonProps}
+      className={`${commonProps.className} px-4 py-3 ${
+        selected ? "bg-charcoal/[0.06]" : "hover:bg-charcoal/[0.03]"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="inline-block h-2 w-2 rounded-full"
+          style={{ background: segment.cue_color }}
+          aria-hidden
+        />
+        <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
+          {segment.type}
+        </span>
+        {!segment.is_active && (
+          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
+            · inactive
+          </span>
+        )}
+        {segment.countdown_seconds != null && (
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
+            {segment.countdown_seconds}s
+          </span>
+        )}
+      </div>
+      <div className="mt-1 font-serif text-sm text-charcoal">
+        {segment.cue_label}
+      </div>
+      {segment.script_text && (
+        <div className="mt-1 font-mono text-[10px] text-charcoal/60 line-clamp-2">
+          {segment.script_text}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/* ------------------------------ Add step menu ----------------------------- */
+
+function AddSegmentMenu({ onAdd }: { onAdd: (kind: SegmentType) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-4 py-3 hover:bg-iron/90 transition-colors"
+      >
+        + Add step
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 bottom-full mb-2 border border-charcoal/25 bg-parchment shadow-lg z-10">
+          {ADD_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                setOpen(false);
+                onAdd(opt.key);
+              }}
+              className="w-full text-left px-4 py-3 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal hover:bg-charcoal/[0.06] border-b border-charcoal/10 last:border-b-0"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
