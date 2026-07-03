@@ -47,6 +47,9 @@ function Landing() {
     // 1) Mic access — must be inside the user gesture
     try {
       await mic.acquire();
+      // Unlock the shared prompt audio element inside this user gesture so
+      // every prospect-audio step in the screening can autoplay without a tap.
+      await unlockPromptPlayer();
     } catch (err) {
       const e = err as DOMException;
       console.error("[mic] acquire failed:", e.name, e.message);
