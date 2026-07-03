@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { segments } from "@/config/segments";
+
 
 export const Route = createFileRoute("/review")({
   head: () => ({
@@ -182,12 +182,9 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
 function Detail({ session, onBack }: { session: SessionRow; onBack: () => void }) {
   const [responses, setResponses] = useState<ResponseRow[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [segmentTypes, setSegmentTypes] = useState<Record<string, string>>({});
 
-  const segmentTypeById = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const s of segments) m[s.id] = s.type;
-    return m;
-  }, []);
+  const segmentTypeById = useMemo(() => segmentTypes, [segmentTypes]);
 
   useEffect(() => {
     (async () => {
@@ -198,6 +195,19 @@ function Detail({ session, onBack }: { session: SessionRow; onBack: () => void }
         .order("sort_order", { ascending: true });
       const rows = (data as ResponseRow[]) ?? [];
       setResponses(rows);
+
+      const ids = Array.from(new Set(rows.map((r) => r.segment_id)));
+      if (ids.length) {
+        const { data: segs } = await supabase
+          .from("segments")
+          .select("id,type")
+          .in("id", ids);
+        const map: Record<string, string> = {};
+        for (const s of (segs as Array<{ id: string; type: string }> | null) ?? []) {
+          map[s.id] = s.type;
+        }
+        setSegmentTypes(map);
+      }
 
       const signed: Record<string, string> = {};
       await Promise.all(
@@ -211,6 +221,7 @@ function Detail({ session, onBack }: { session: SessionRow; onBack: () => void }
       setUrls(signed);
     })();
   }, [session.id]);
+
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -295,7 +306,9 @@ function formatDate(iso: string) {
 
 function typeLabel(t: string | undefined) {
   if (t === "warmup") return "Warm-up";
+  if (t === "question") return "Question";
   if (t === "scripted") return "Scripted";
   if (t === "improv") return "Improv";
   return t ?? "—";
 }
+
