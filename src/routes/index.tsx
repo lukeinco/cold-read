@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
+import * as mic from "@/lib/mic";
 
 
 export const Route = createFileRoute("/")({
