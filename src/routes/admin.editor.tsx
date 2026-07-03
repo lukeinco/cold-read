@@ -226,61 +226,20 @@ function EditorDashboard() {
             ) : (
               <ul>
                 {segments.map((s) => (
-                  <li
+                  <SegmentCard
                     key={s.id}
-                    draggable
+                    segment={s}
+                    selected={selectedId === s.id}
+                    dragging={dragId === s.id}
+                    onSelect={() => setSelectedId(s.id)}
                     onDragStart={() => setDragId(s.id)}
-                    onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDropReorder(s.id)}
-                    onClick={() => setSelectedId(s.id)}
-                    className={`cursor-pointer border-b border-charcoal/10 px-4 py-3 transition-colors ${
-                      selectedId === s.id
-                        ? "bg-charcoal/[0.06]"
-                        : "hover:bg-charcoal/[0.03]"
-                    } ${dragId === s.id ? "opacity-40" : ""}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block h-2 w-2 rounded-full"
-                        style={{ background: s.cue_color }}
-                        aria-hidden
-                      />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
-                        {s.type}
-                      </span>
-                      {!s.is_active && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
-                          · inactive
-                        </span>
-                      )}
-                      {s.prompt_audio_path && (
-                        <span
-                          className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-juniper"
-                          title="Audio attached"
-                        >
-                          ♪
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 font-serif text-sm text-charcoal">
-                      {s.cue_label}
-                    </div>
-                    {s.script_text && (
-                      <div className="mt-1 font-mono text-[10px] text-charcoal/60 line-clamp-2">
-                        {s.script_text}
-                      </div>
-                    )}
-                  </li>
+                  />
                 ))}
               </ul>
             )}
             <div className="p-4">
-              <button
-                onClick={handleAdd}
-                className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-4 py-3 hover:bg-iron/90 transition-colors"
-              >
-                + Add segment
-              </button>
+              <AddSegmentMenu onAdd={(k) => handleAdd(k)} />
             </div>
           </aside>
 
