@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SessionProvider } from "../context/session-context";
+import * as mic from "../lib/mic";
 
 function NotFoundComponent() {
   return (
@@ -132,6 +133,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    const onPageHide = () => mic.release();
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
@@ -141,4 +148,5 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
 
