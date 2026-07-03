@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
+import * as mic from "@/lib/mic";
 
 export type SegmentType = "warmup" | "question" | "scripted" | "improv";
 
@@ -69,8 +70,9 @@ export const Route = createFileRoute("/screening")({
 type Phase = "prompt" | "cue" | "respond" | "upload";
 
 function Screening() {
-  const { sessionId, sessionToken, mediaStream } = useSession();
+  const { sessionId, sessionToken } = useSession();
   const { data: segments } = useSuspenseQuery(segmentsQueryOptions);
+  const mediaStream = mic.getExisting();
 
   if (!sessionId || !sessionToken || !mediaStream) {
     return <Navigate to="/" />;
