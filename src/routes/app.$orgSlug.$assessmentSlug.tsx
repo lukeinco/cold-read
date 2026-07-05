@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { orgBySlugQueryOptions } from "@/lib/org-queries";
 
-export const Route = createFileRoute("/app/$slug")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug")({
   head: () => ({
     meta: [
       { title: "Cold Read — voice screening" },

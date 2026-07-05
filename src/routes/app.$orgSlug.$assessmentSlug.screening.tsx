@@ -52,7 +52,7 @@ function segmentsForOrgQueryOptions(orgId: string) {
   });
 }
 
-export const Route = createFileRoute("/app/$slug/screening")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/screening")({
   head: () => ({
     meta: [
       { title: "Screening — Cold Read" },

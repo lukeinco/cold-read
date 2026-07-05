@@ -7,7 +7,7 @@ import * as mic from "@/lib/mic";
 import { unlockPromptPlayer } from "@/lib/promptPlayer";
 import { orgBySlugQueryOptions } from "@/lib/org-queries";
 
-export const Route = createFileRoute("/app/$slug/")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(orgBySlugQueryOptions(params.slug)),
   component: Landing,
