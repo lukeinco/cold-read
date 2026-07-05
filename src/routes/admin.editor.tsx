@@ -730,17 +730,25 @@ function SegmentEditor({
               style={{ background: cueColor, color: readableOn(cueColor) }}
             >
               <div
-                className="font-display uppercase leading-[0.95]"
-                style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)", letterSpacing: "0.02em" }}
+                className="uppercase leading-[0.95]"
+                style={{
+                  fontFamily: fontStack(titleFont, DEFAULT_TITLE_FONT),
+                  fontWeight: 600,
+                  fontSize: "clamp(1.5rem, 4vw, 3rem)",
+                  letterSpacing: "0.02em",
+                }}
               >
                 {cueLabel || "Slide title"}
               </div>
               {scriptText.trim() && (
                 <div
-                  className="mt-4 font-serif max-w-[80%] leading-[1.3]"
-                  style={{ fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)" }}
+                  className="mt-4 max-w-[80%] leading-[1.3]"
+                  style={{
+                    fontFamily: fontStack(bodyFont, DEFAULT_BODY_FONT),
+                    fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)",
+                  }}
                 >
-                  <em>{scriptText}</em>
+                  {scriptText}
                 </div>
               )}
             </div>
@@ -748,6 +756,28 @@ function SegmentEditor({
               Candidates see this full-screen, then tap Continue.
             </p>
           </Field>
+        )}
+
+        {!isAudio && !isText && theme && (
+          <ResponseStepPreview
+            theme={theme}
+            titleFont={titleFont}
+            bodyFont={bodyFont}
+            cueLabel={cueLabel}
+            scriptText={scriptText}
+            overrideCard={overrideCard}
+            overrideText={overrideText}
+          />
+        )}
+
+        {!isAudio && !isText && (
+          <ColorsOverrideField
+            theme={theme}
+            overrideCard={overrideCard}
+            overrideText={overrideText}
+            onCard={setOverrideCard}
+            onText={setOverrideText}
+          />
         )}
 
         {hasCountdown && (
