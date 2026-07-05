@@ -158,6 +158,22 @@ function EditorDashboard({
   const [orgId, setOrgId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [themes, setThemes] = useState<Theme[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    supabase
+      .from("themes")
+      .select(
+        "id, name, bg_color, card_color, text_color, accent_color, muted_color, is_preset, created_by",
+      )
+      .then(({ data }) => {
+        if (alive) setThemes((data ?? []) as Theme[]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     loadAdminOrgs({ userId, isSuperadmin })
