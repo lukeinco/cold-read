@@ -6,7 +6,14 @@ import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { getPromptPlayer } from "@/lib/promptPlayer";
 
-export type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
+export type SegmentType =
+  | "audio"
+  | "text"
+  | "text_entry"
+  | "warmup"
+  | "question"
+  | "scripted"
+  | "improv";
 
 export interface Segment {
   id: string;
@@ -117,13 +124,17 @@ function Player({
   const segment = segments[index];
   const isLast = index === segments.length - 1;
 
+  // Non-response steps: audio, text. Response steps: warmup/question/scripted/improv/text_entry.
+  const isResponseStep = (t: SegmentType) =>
+    t !== "audio" && t !== "text";
+
   // Progress counts response steps only.
   const responseSteps = useMemo(
-    () => segments.filter((s) => s.type !== "audio"),
+    () => segments.filter((s) => isResponseStep(s.type)),
     [segments],
   );
   const responseIndex = useMemo(() => {
-    if (segment.type === "audio") return -1;
+    if (!isResponseStep(segment.type)) return -1;
     return responseSteps.findIndex((s) => s.id === segment.id);
   }, [segment, responseSteps]);
 
@@ -141,6 +152,37 @@ function Player({
     return (
       <main className="min-h-screen relative">
         <AudioCallPhase key={`audio-${segment.id}`} segment={segment} onDone={advanceSegment} />
+      </main>
+    );
+  }
+
+  // Text slide: display only, no response saved.
+  if (segment.type === "text") {
+    return (
+      <main className="min-h-screen relative">
+        <TextSlidePhase key={`text-${segment.id}`} segment={segment} onDone={advanceSegment} />
+      </main>
+    );
+  }
+
+  // Text entry: candidate types response.
+  if (segment.type === "text_entry") {
+    return (
+      <main className="min-h-screen relative">
+        {responseIndex >= 0 && (
+          <div className="pointer-events-none absolute right-6 top-6 z-40 font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+            {String(responseIndex + 1).padStart(2, "0")} /{" "}
+            {String(responseSteps.length).padStart(2, "0")}
+          </div>
+        )}
+        <TextEntryPhase
+          key={`text-entry-${segment.id}`}
+          sessionId={sessionId}
+          sessionToken={sessionToken}
+          segment={segment}
+          sortOrder={index}
+          onDone={advanceSegment}
+        />
       </main>
     );
   }
@@ -300,6 +342,159 @@ function AudioCallPhase({ segment, onDone }: { segment: Segment; onDone: () => v
         <span className="text-sm uppercase tracking-[0.28em] tabular-nums">
           Call in progress — {mm}:{ss}
         </span>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------- Text slide (display) ------------------------ */
+
+function readableOn(bg: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(bg.trim());
+  if (!m) return "#F5F0E8";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return l > 0.6 ? "#2B2B28" : "#F5F0E8";
+}
+
+function TextSlidePhase({ segment, onDone }: { segment: Segment; onDone: () => void }) {
+  const fg = readableOn(segment.cueColor);
+  return (
+    <section
+      className="min-h-screen flex flex-col items-center justify-center px-8 py-16 text-center"
+      style={{ backgroundColor: segment.cueColor, color: fg }}
+    >
+      <h1
+        className="font-display uppercase leading-[0.95]"
+        style={{ fontSize: "clamp(2.5rem, 8vw, 6rem)", letterSpacing: "0.02em" }}
+      >
+        {segment.cueLabel}
+      </h1>
+      {segment.scriptText && (
+        <p
+          className="mt-8 max-w-2xl font-serif leading-[1.3]"
+          style={{ fontSize: "clamp(1.125rem, 2.5vw, 1.75rem)" }}
+        >
+          <em>{segment.scriptText}</em>
+        </p>
+      )}
+      <button
+        onClick={onDone}
+        className="mt-14 inline-flex items-center gap-3 border-2 px-8 py-4 font-mono text-sm uppercase tracking-[0.28em] transition-transform hover:-translate-y-0.5"
+        style={{ borderColor: fg, color: fg }}
+      >
+        <span>Continue</span>
+        <span aria-hidden>→</span>
+      </button>
+    </section>
+  );
+}
+
+/* ------------------------------ Text entry ------------------------------- */
+
+function TextEntryPhase({
+  sessionId,
+  sessionToken,
+  segment,
+  sortOrder,
+  onDone,
+}: {
+  sessionId: string;
+  sessionToken: string;
+  segment: Segment;
+  sortOrder: number;
+  onDone: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "failed">("idle");
+  const [remaining, setRemaining] = useState(segment.countdownSeconds ?? 0);
+  const submittedRef = useRef(false);
+
+  const submit = useCallback(async () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    setStatus("saving");
+    try {
+      const blob = new Blob([text], { type: "text/plain" });
+      const form = new FormData();
+      form.append("sessionId", sessionId);
+      form.append("sessionToken", sessionToken);
+      form.append("segmentId", segment.id);
+      form.append("sortOrder", String(sortOrder));
+      form.append("audio", blob, `${segment.id}.txt`);
+      const res = await fetch("/api/save-recording", { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text().catch(() => "save failed"));
+      onDone();
+    } catch (err) {
+      console.error("text-entry save failed", err);
+      submittedRef.current = false;
+      setStatus("failed");
+    }
+  }, [text, sessionId, sessionToken, segment.id, sortOrder, onDone]);
+
+  useEffect(() => {
+    if (segment.countdownSeconds == null) return;
+    const start = performance.now();
+    const total = segment.countdownSeconds;
+    const id = window.setInterval(() => {
+      const left = Math.max(0, total - (performance.now() - start) / 1000);
+      setRemaining(left);
+      if (left <= 0) {
+        window.clearInterval(id);
+        void submit();
+      }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [segment.countdownSeconds, submit]);
+
+  const hasCountdown = segment.countdownSeconds != null;
+  const secondsDisplay = hasCountdown ? Math.ceil(remaining) : null;
+
+  return (
+    <section className="min-h-screen flex flex-col bg-parchment px-6 pt-20 pb-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 flex flex-col">
+        <h1
+          className="font-display uppercase leading-[0.95] text-charcoal"
+          style={{ fontSize: "clamp(1.75rem, 4.5vw, 3rem)", letterSpacing: "0.02em" }}
+        >
+          {segment.cueLabel}
+        </h1>
+        {segment.scriptText && (
+          <p className="mt-3 font-serif text-charcoal/85 text-lg leading-snug">
+            <em>{segment.scriptText}</em>
+          </p>
+        )}
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={status === "saving"}
+          placeholder="Type your response…"
+          className="mt-6 flex-1 min-h-[240px] w-full bg-transparent border border-charcoal/25 focus:border-primary p-4 font-serif text-lg text-charcoal focus:outline-none resize-none disabled:opacity-60"
+          autoFocus
+        />
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
+            {hasCountdown ? (
+              <span className="tabular-nums">
+                {String(secondsDisplay ?? 0).padStart(2, "0")}s remaining
+              </span>
+            ) : (
+              <span>Take your time</span>
+            )}
+            {status === "failed" && (
+              <span className="ml-3 text-primary">Save failed — try again</span>
+            )}
+          </div>
+          <button
+            onClick={() => void submit()}
+            disabled={status === "saving" || text.trim().length === 0}
+            className="inline-flex items-center gap-3 bg-iron px-8 py-4 font-mono text-sm uppercase tracking-[0.28em] text-parchment transition-transform hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0"
+          >
+            <span>{status === "saving" ? "Saving…" : "Submit"}</span>
+            <span aria-hidden>→</span>
+          </button>
+        </div>
       </div>
     </section>
   );

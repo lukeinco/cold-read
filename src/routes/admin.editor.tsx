@@ -14,7 +14,14 @@ export const Route = createFileRoute("/admin/editor")({
   component: EditorPage,
 });
 
-type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
+type SegmentType =
+  | "audio"
+  | "text"
+  | "text_entry"
+  | "warmup"
+  | "question"
+  | "scripted"
+  | "improv";
 
 type Segment = {
   id: string;
@@ -31,15 +38,39 @@ type Segment = {
   updated_at: string;
 };
 
-const RESPONSE_TYPES: SegmentType[] = ["warmup", "question", "scripted", "improv"];
-const PALETTE = ["#3D5E4A", "#2B2B28", "#C44A18"];
+const PALETTE = ["#3D5E4A", "#2B2B28", "#C44A18", "#F5F0E8"];
 
 const ADD_OPTIONS: { key: SegmentType; label: string }[] = [
+  { key: "text", label: "Text card" },
+  { key: "text_entry", label: "Text response" },
   { key: "audio", label: "Prospect audio" },
   { key: "question", label: "Question" },
   { key: "scripted", label: "Scripted read" },
   { key: "improv", label: "Improv" },
 ];
+
+function typeLabel(t: SegmentType): string {
+  switch (t) {
+    case "audio": return "Prospect audio";
+    case "text": return "Text card";
+    case "text_entry": return "Text response";
+    case "warmup": return "Warm-up";
+    case "question": return "Question";
+    case "scripted": return "Scripted read";
+    case "improv": return "Improv";
+  }
+}
+
+function readableOn(bg: string): string {
+  // Simple luminance check for #RRGGBB — returns parchment on dark, charcoal on light.
+  const m = /^#?([0-9a-f]{6})$/i.exec(bg.trim());
+  if (!m) return "#F5F0E8";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return l > 0.6 ? "#2B2B28" : "#F5F0E8";
+}
+
 
 function EditorPage() {
   const navigate = useNavigate();
@@ -118,14 +149,25 @@ function EditorDashboard() {
   async function handleAdd(kind: SegmentType) {
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
-    const isAudio = kind === "audio";
+    const defaults: Partial<Segment> = (() => {
+      switch (kind) {
+        case "audio":
+          return { cue_color: "#2B2B28", cue_label: "Prospect audio" };
+        case "text":
+          return { cue_color: "#2B2B28", cue_label: "New title" };
+        case "text_entry":
+          return { cue_color: "#3D5E4A", cue_label: "Your response" };
+        default:
+          return { cue_color: "#3D5E4A", cue_label: "New segment" };
+      }
+    })();
     const { data, error } = await supabase
       .from("segments")
       .insert({
         sort_order: nextOrder,
         type: kind,
-        cue_color: isAudio ? "#2B2B28" : "#3D5E4A",
-        cue_label: isAudio ? "Prospect audio" : "New segment",
+        cue_color: defaults.cue_color!,
+        cue_label: defaults.cue_label!,
         is_active: false,
       })
       .select("*")
@@ -304,10 +346,15 @@ function SegmentEditor({
     isActive !== initial.current.isActive;
 
   const isAudio = type === "audio";
+  const isText = type === "text";
+  const isTextEntry = type === "text_entry";
+  const hasScript = type === "scripted" || isText || isTextEntry;
+  const hasCountdown = !isAudio && !isText;
+  const hasColor = !isAudio;
 
   function handleTypeChange(next: SegmentType) {
     setType(next);
-    if (next === "improv" || next === "audio") setCountdown("");
+    if (next === "improv" || next === "audio" || next === "text") setCountdown("");
   }
 
   async function handleSave() {
@@ -323,8 +370,8 @@ function SegmentEditor({
       type,
       cue_label: cueLabel.trim() || "Untitled",
       cue_color: isAudio ? "#2B2B28" : cueColor,
-      script_text: type === "scripted" ? scriptText : null,
-      countdown_seconds: isAudio ? null : parsedCountdown,
+      script_text: hasScript ? scriptText : null,
+      countdown_seconds: hasCountdown ? parsedCountdown : null,
       is_active: isActive,
     };
     const { data, error } = await supabase
@@ -392,11 +439,29 @@ function SegmentEditor({
           </div>
         </Field>
 
-        <Field label={isAudio ? "Admin label (internal only)" : "Cue label"}>
+        <Field
+          label={
+            isAudio
+              ? "Admin label (internal only)"
+              : isText
+                ? "Title"
+                : isTextEntry
+                  ? "Prompt"
+                  : "Cue label"
+          }
+        >
           <input
             value={cueLabel}
             onChange={(e) => setCueLabel(e.target.value)}
-            placeholder={isAudio ? "e.g. Gatekeeper opener" : ""}
+            placeholder={
+              isAudio
+                ? "e.g. Gatekeeper opener"
+                : isText
+                  ? "Slide title"
+                  : isTextEntry
+                    ? "What should the candidate write about?"
+                    : ""
+            }
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
           />
           {isAudio && (
@@ -406,9 +471,9 @@ function SegmentEditor({
           )}
         </Field>
 
-        {!isAudio && (
-          <Field label="Cue color">
-            <div className="flex items-center gap-3">
+        {hasColor && (
+          <Field label={isText ? "Background color" : "Cue color"}>
+            <div className="flex items-center gap-3 flex-wrap">
               {PALETTE.map((c) => (
                 <button
                   key={c}
@@ -437,18 +502,56 @@ function SegmentEditor({
           </Field>
         )}
 
-        {type === "scripted" && (
-          <Field label="Script text">
+        {hasScript && (
+          <Field
+            label={
+              isText ? "Body text" : isTextEntry ? "Context (optional)" : "Script text"
+            }
+          >
             <textarea
               value={scriptText}
               onChange={(e) => setScriptText(e.target.value)}
-              rows={5}
+              rows={isText ? 4 : 5}
+              placeholder={
+                isText
+                  ? "Optional body text below the title"
+                  : isTextEntry
+                    ? "Optional instructions shown above the text box"
+                    : ""
+              }
               className="w-full bg-transparent border border-charcoal/25 focus:border-primary p-3 font-serif text-base text-charcoal focus:outline-none"
             />
           </Field>
         )}
 
-        {!isAudio && (
+        {isText && (
+          <Field label="Slide preview">
+            <div
+              className="w-full aspect-[16/9] flex flex-col items-center justify-center p-8 text-center overflow-hidden"
+              style={{ background: cueColor, color: readableOn(cueColor) }}
+            >
+              <div
+                className="font-display uppercase leading-[0.95]"
+                style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)", letterSpacing: "0.02em" }}
+              >
+                {cueLabel || "Slide title"}
+              </div>
+              {scriptText.trim() && (
+                <div
+                  className="mt-4 font-serif max-w-[80%] leading-[1.3]"
+                  style={{ fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)" }}
+                >
+                  <em>{scriptText}</em>
+                </div>
+              )}
+            </div>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Candidates see this full-screen, then tap Continue.
+            </p>
+          </Field>
+        )}
+
+        {hasCountdown && (
           <Field label="Countdown (seconds)">
             <input
               type="number"
@@ -458,7 +561,9 @@ function SegmentEditor({
               className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
             />
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-              Leave empty for no timer — improv should be empty.
+              {isTextEntry
+                ? "Optional writing timer — leave empty for no timer."
+                : "Leave empty for no timer — improv should be empty."}
             </p>
           </Field>
         )}
@@ -959,6 +1064,43 @@ function SegmentCard({
     );
   }
 
+  const isText = segment.type === "text";
+  const isTextEntry = segment.type === "text_entry";
+
+  if (isText) {
+    const fg = readableOn(segment.cue_color);
+    return (
+      <li
+        {...commonProps}
+        className={`${commonProps.className} ${
+          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+        }`}
+        style={{ background: segment.cue_color, color: fg }}
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2" style={{ opacity: 0.7 }}>
+            <span className="font-mono text-[10px] uppercase tracking-[0.28em]">
+              ▤ Slide
+            </span>
+            {!segment.is_active && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ opacity: 0.6 }}>
+                · inactive
+              </span>
+            )}
+          </div>
+          <div className="mt-1 font-display uppercase text-sm tracking-wide truncate">
+            {segment.cue_label || "Untitled slide"}
+          </div>
+          {segment.script_text && (
+            <div className="mt-1 font-serif text-[11px] line-clamp-2" style={{ opacity: 0.85 }}>
+              <em>{segment.script_text}</em>
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li
       {...commonProps}
@@ -973,7 +1115,7 @@ function SegmentCard({
           aria-hidden
         />
         <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
-          {segment.type}
+          {isTextEntry ? "✎ Text response" : typeLabel(segment.type)}
         </span>
         {!segment.is_active && (
           <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
