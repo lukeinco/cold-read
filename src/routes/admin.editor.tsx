@@ -428,11 +428,29 @@ function SegmentEditor({
           </div>
         </Field>
 
-        <Field label={isAudio ? "Admin label (internal only)" : "Cue label"}>
+        <Field
+          label={
+            isAudio
+              ? "Admin label (internal only)"
+              : isText
+                ? "Title"
+                : isTextEntry
+                  ? "Prompt"
+                  : "Cue label"
+          }
+        >
           <input
             value={cueLabel}
             onChange={(e) => setCueLabel(e.target.value)}
-            placeholder={isAudio ? "e.g. Gatekeeper opener" : ""}
+            placeholder={
+              isAudio
+                ? "e.g. Gatekeeper opener"
+                : isText
+                  ? "Slide title"
+                  : isTextEntry
+                    ? "What should the candidate write about?"
+                    : ""
+            }
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
           />
           {isAudio && (
@@ -442,9 +460,9 @@ function SegmentEditor({
           )}
         </Field>
 
-        {!isAudio && (
-          <Field label="Cue color">
-            <div className="flex items-center gap-3">
+        {hasColor && (
+          <Field label={isText ? "Background color" : "Cue color"}>
+            <div className="flex items-center gap-3 flex-wrap">
               {PALETTE.map((c) => (
                 <button
                   key={c}
@@ -473,18 +491,56 @@ function SegmentEditor({
           </Field>
         )}
 
-        {type === "scripted" && (
-          <Field label="Script text">
+        {hasScript && (
+          <Field
+            label={
+              isText ? "Body text" : isTextEntry ? "Context (optional)" : "Script text"
+            }
+          >
             <textarea
               value={scriptText}
               onChange={(e) => setScriptText(e.target.value)}
-              rows={5}
+              rows={isText ? 4 : 5}
+              placeholder={
+                isText
+                  ? "Optional body text below the title"
+                  : isTextEntry
+                    ? "Optional instructions shown above the text box"
+                    : ""
+              }
               className="w-full bg-transparent border border-charcoal/25 focus:border-primary p-3 font-serif text-base text-charcoal focus:outline-none"
             />
           </Field>
         )}
 
-        {!isAudio && (
+        {isText && (
+          <Field label="Slide preview">
+            <div
+              className="w-full aspect-[16/9] flex flex-col items-center justify-center p-8 text-center overflow-hidden"
+              style={{ background: cueColor, color: readableOn(cueColor) }}
+            >
+              <div
+                className="font-display uppercase leading-[0.95]"
+                style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)", letterSpacing: "0.02em" }}
+              >
+                {cueLabel || "Slide title"}
+              </div>
+              {scriptText.trim() && (
+                <div
+                  className="mt-4 font-serif max-w-[80%] leading-[1.3]"
+                  style={{ fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)" }}
+                >
+                  <em>{scriptText}</em>
+                </div>
+              )}
+            </div>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Candidates see this full-screen, then tap Continue.
+            </p>
+          </Field>
+        )}
+
+        {hasCountdown && (
           <Field label="Countdown (seconds)">
             <input
               type="number"
@@ -494,7 +550,9 @@ function SegmentEditor({
               className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
             />
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-              Leave empty for no timer — improv should be empty.
+              {isTextEntry
+                ? "Optional writing timer — leave empty for no timer."
+                : "Leave empty for no timer — improv should be empty."}
             </p>
           </Field>
         )}
