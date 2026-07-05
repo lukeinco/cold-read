@@ -4,6 +4,19 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import * as mic from "@/lib/mic";
 import { loadAdminOrgs, type Org, type Assessment } from "@/lib/org-queries";
+import { PresentationPanel } from "@/components/admin/PresentationPanel";
+import {
+  DEFAULT_BODY_FONT,
+  DEFAULT_TITLE_FONT,
+  fontStack,
+} from "@/config/fonts";
+import {
+  type Theme,
+  contrastRatio,
+  eqColor,
+  inPalette,
+  themeSwatches,
+} from "@/lib/themes";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
@@ -36,6 +49,8 @@ type Segment = {
   is_active: boolean;
   cue_color: string;
   cue_label: string;
+  override_card_color: string | null;
+  override_text_color: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -143,6 +158,22 @@ function EditorDashboard({
   const [orgId, setOrgId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [themes, setThemes] = useState<Theme[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    supabase
+      .from("themes")
+      .select(
+        "id, name, bg_color, card_color, text_color, accent_color, muted_color, is_preset, created_by",
+      )
+      .then(({ data }) => {
+        if (alive) setThemes((data ?? []) as Theme[]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     loadAdminOrgs({ userId, isSuperadmin })
@@ -279,6 +310,27 @@ function EditorDashboard({
     [segments, selectedId],
   );
 
+  const currentAssessment = useMemo(
+    () => assessments?.find((a) => a.id === assessmentId) ?? null,
+    [assessments, assessmentId],
+  );
+
+  const activeTheme = useMemo(
+    () => themes?.find((t) => t.id === currentAssessment?.theme_id) ?? null,
+    [themes, currentAssessment],
+  );
+
+  const activePalette = useMemo(
+    () => (activeTheme ? themeSwatches(activeTheme) : []),
+    [activeTheme],
+  );
+
+  function handleAssessmentChange(next: Assessment) {
+    setAssessments((prev) =>
+      (prev ?? []).map((a) => (a.id === next.id ? next : a)),
+    );
+  }
+
   function onSegmentSaved(updated: Segment) {
     setSegments((prev) =>
       (prev ?? []).map((s) => (s.id === updated.id ? updated : s)),
@@ -291,8 +343,9 @@ function EditorDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-parchment px-6 py-12">
-      <div className="max-w-6xl mx-auto">
+    <main className="min-h-screen bg-parchment flex">
+      <div className="flex-1 min-w-0 px-6 py-12">
+        <div className="max-w-6xl mx-auto">
         <header className="flex items-baseline justify-between border-b-2 border-charcoal/20 pb-4">
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
             COLD READ — EDITOR
@@ -389,6 +442,7 @@ function EditorDashboard({
                     segment={s}
                     selected={selectedId === s.id}
                     dragging={dragId === s.id}
+                    activePalette={activePalette}
                     onSelect={() => setSelectedId(s.id)}
                     onDragStart={() => setDragId(s.id)}
                     onDrop={() => handleDropReorder(s.id)}
@@ -406,6 +460,9 @@ function EditorDashboard({
               <SegmentEditor
                 key={selected.id}
                 segment={selected}
+                theme={activeTheme}
+                titleFont={currentAssessment?.title_font ?? DEFAULT_TITLE_FONT}
+                bodyFont={currentAssessment?.body_font ?? DEFAULT_BODY_FONT}
                 onSaved={onSegmentSaved}
                 onDeleted={onSegmentDeleted}
                 onError={setError}
@@ -417,18 +474,31 @@ function EditorDashboard({
             )}
           </section>
         </div>
+        </div>
       </div>
+      {currentAssessment && (
+        <PresentationPanel
+          assessment={currentAssessment}
+          onAssessmentChange={handleAssessmentChange}
+        />
+      )}
     </main>
   );
 }
 
 function SegmentEditor({
   segment,
+  theme,
+  titleFont,
+  bodyFont,
   onSaved,
   onDeleted,
   onError,
 }: {
   segment: Segment;
+  theme: Theme | null;
+  titleFont: string;
+  bodyFont: string;
   onSaved: (s: Segment) => void;
   onDeleted: (id: string) => void;
   onError: (m: string) => void;
@@ -441,6 +511,12 @@ function SegmentEditor({
     segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
   );
   const [isActive, setIsActive] = useState(segment.is_active);
+  const [overrideCard, setOverrideCard] = useState<string | null>(
+    segment.override_card_color,
+  );
+  const [overrideText, setOverrideText] = useState<string | null>(
+    segment.override_text_color,
+  );
   const [saving, setSaving] = useState(false);
 
   const initial = useRef({
@@ -451,6 +527,8 @@ function SegmentEditor({
     countdown:
       segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
     isActive: segment.is_active,
+    overrideCard: segment.override_card_color,
+    overrideText: segment.override_text_color,
   });
 
   const dirty =
@@ -459,7 +537,9 @@ function SegmentEditor({
     cueColor !== initial.current.cueColor ||
     scriptText !== initial.current.scriptText ||
     countdown !== initial.current.countdown ||
-    isActive !== initial.current.isActive;
+    isActive !== initial.current.isActive ||
+    overrideCard !== initial.current.overrideCard ||
+    overrideText !== initial.current.overrideText;
 
   const isAudio = type === "audio";
   const isText = type === "text";
@@ -489,6 +569,8 @@ function SegmentEditor({
       script_text: hasScript ? scriptText : null,
       countdown_seconds: hasCountdown ? parsedCountdown : null,
       is_active: isActive,
+      override_card_color: overrideCard,
+      override_text_color: overrideText,
     };
     const { data, error } = await supabase
       .from("segments")
@@ -510,6 +592,8 @@ function SegmentEditor({
       countdown:
         updated.countdown_seconds != null ? String(updated.countdown_seconds) : "",
       isActive: updated.is_active,
+      overrideCard: updated.override_card_color,
+      overrideText: updated.override_text_color,
     };
     onSaved(updated);
   }
@@ -647,17 +731,25 @@ function SegmentEditor({
               style={{ background: cueColor, color: readableOn(cueColor) }}
             >
               <div
-                className="font-display uppercase leading-[0.95]"
-                style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)", letterSpacing: "0.02em" }}
+                className="uppercase leading-[0.95]"
+                style={{
+                  fontFamily: fontStack(titleFont, DEFAULT_TITLE_FONT),
+                  fontWeight: 600,
+                  fontSize: "clamp(1.5rem, 4vw, 3rem)",
+                  letterSpacing: "0.02em",
+                }}
               >
                 {cueLabel || "Slide title"}
               </div>
               {scriptText.trim() && (
                 <div
-                  className="mt-4 font-serif max-w-[80%] leading-[1.3]"
-                  style={{ fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)" }}
+                  className="mt-4 max-w-[80%] leading-[1.3]"
+                  style={{
+                    fontFamily: fontStack(bodyFont, DEFAULT_BODY_FONT),
+                    fontSize: "clamp(0.875rem, 1.4vw, 1.25rem)",
+                  }}
                 >
-                  <em>{scriptText}</em>
+                  {scriptText}
                 </div>
               )}
             </div>
@@ -665,6 +757,28 @@ function SegmentEditor({
               Candidates see this full-screen, then tap Continue.
             </p>
           </Field>
+        )}
+
+        {!isAudio && !isText && theme && (
+          <ResponseStepPreview
+            theme={theme}
+            titleFont={titleFont}
+            bodyFont={bodyFont}
+            cueLabel={cueLabel}
+            scriptText={scriptText}
+            overrideCard={overrideCard}
+            overrideText={overrideText}
+          />
+        )}
+
+        {!isAudio && !isText && (
+          <ColorsOverrideField
+            theme={theme}
+            overrideCard={overrideCard}
+            overrideText={overrideText}
+            onCard={setOverrideCard}
+            onText={setOverrideText}
+          />
         )}
 
         {hasCountdown && (
@@ -1097,6 +1211,7 @@ function SegmentCard({
   segment,
   selected,
   dragging,
+  activePalette,
   onSelect,
   onDragStart,
   onDrop,
@@ -1104,10 +1219,16 @@ function SegmentCard({
   segment: Segment;
   selected: boolean;
   dragging: boolean;
+  activePalette: string[];
   onSelect: () => void;
   onDragStart: () => void;
   onDrop: () => void;
 }) {
+  const overrideOutOfPalette =
+    (segment.override_card_color != null &&
+      !inPalette(segment.override_card_color, activePalette)) ||
+    (segment.override_text_color != null &&
+      !inPalette(segment.override_text_color, activePalette));
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const isAudio = segment.type === "audio";
   const path = segment.prompt_audio_path;
@@ -1247,6 +1368,13 @@ function SegmentCard({
             {segment.countdown_seconds}s
           </span>
         )}
+        {overrideOutOfPalette && (
+          <span
+            className={`${segment.countdown_seconds != null ? "ml-2" : "ml-auto"} inline-block h-2 w-2 rounded-full bg-primary`}
+            title="Override color is outside the current theme palette"
+            aria-label="Override color outside theme"
+          />
+        )}
       </div>
       <div className="mt-1 font-serif text-sm text-charcoal">
         {segment.cue_label}
@@ -1299,6 +1427,159 @@ function AddSegmentMenu({ onAdd }: { onAdd: (kind: SegmentType) => void }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* --------------------------- Response step preview + overrides --------------------------- */
+
+function ResponseStepPreview({
+  theme,
+  titleFont,
+  bodyFont,
+  cueLabel,
+  scriptText,
+  overrideCard,
+  overrideText,
+}: {
+  theme: Theme;
+  titleFont: string;
+  bodyFont: string;
+  cueLabel: string;
+  scriptText: string;
+  overrideCard: string | null;
+  overrideText: string | null;
+}) {
+  const bg = theme.bg_color ?? "#0C1A22";
+  const card = overrideCard ?? theme.card_color ?? "#1B3A32";
+  const text = overrideText ?? theme.text_color ?? "#EDF2EE";
+  const accent = theme.accent_color ?? "#E8B84B";
+  return (
+    <Field label="Candidate preview">
+      <div
+        className="w-full p-6 flex flex-col items-center"
+        style={{ background: bg }}
+      >
+        <div
+          className="w-full max-w-md p-6 rounded-md"
+          style={{ background: card, color: text }}
+        >
+          <div
+            className="uppercase text-xs tracking-[0.28em] mb-3"
+            style={{ fontFamily: fontStack(titleFont, DEFAULT_TITLE_FONT), color: accent }}
+          >
+            {cueLabel || "Cue label"}
+          </div>
+          <div
+            className="text-base leading-relaxed"
+            style={{ fontFamily: fontStack(bodyFont, DEFAULT_BODY_FONT), color: text }}
+          >
+            {scriptText.trim() || "Script text preview…"}
+          </div>
+        </div>
+      </div>
+    </Field>
+  );
+}
+
+function ColorsOverrideField({
+  theme,
+  overrideCard,
+  overrideText,
+  onCard,
+  onText,
+}: {
+  theme: Theme | null;
+  overrideCard: string | null;
+  overrideText: string | null;
+  onCard: (c: string | null) => void;
+  onText: (c: string | null) => void;
+}) {
+  if (!theme) {
+    return (
+      <Field label="Colors">
+        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50">
+          Loading theme…
+        </p>
+      </Field>
+    );
+  }
+  const palette = themeSwatches(theme);
+  const resolvedCard = overrideCard ?? theme.card_color ?? "#1B3A32";
+  const resolvedText = overrideText ?? theme.text_color ?? "#EDF2EE";
+  const ratio = contrastRatio(resolvedCard, resolvedText);
+  const lowContrast = ratio != null && ratio < 4.5;
+
+  return (
+    <Field label="Colors">
+      <div className="space-y-4">
+        <ColorRow
+          label="Card"
+          palette={palette}
+          value={overrideCard}
+          inherited={theme.card_color ?? null}
+          onChange={onCard}
+        />
+        <ColorRow
+          label="Text"
+          palette={palette}
+          value={overrideText}
+          inherited={theme.text_color ?? null}
+          onChange={onText}
+        />
+        {lowContrast && (
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
+            <span aria-hidden>⚠</span>
+            Low contrast — {ratio!.toFixed(2)}:1 (WCAG AA needs 4.5:1)
+          </p>
+        )}
+      </div>
+    </Field>
+  );
+}
+
+function ColorRow({
+  label,
+  palette,
+  value,
+  inherited,
+  onChange,
+}: {
+  label: string;
+  palette: string[];
+  value: string | null;
+  inherited: string | null;
+  onChange: (c: string | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/70 w-12">
+        {label}
+      </span>
+      <button
+        onClick={() => onChange(null)}
+        className={`px-2 py-1 border font-mono text-[10px] uppercase tracking-[0.24em] transition-colors ${
+          value == null
+            ? "border-charcoal bg-charcoal/[0.06] text-charcoal"
+            : "border-charcoal/30 text-charcoal/70 hover:border-charcoal"
+        }`}
+        title={inherited ? `Inherit theme (${inherited})` : "Inherit theme"}
+      >
+        Inherit
+      </button>
+      {palette.map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={`h-7 w-7 border-2 transition-all ${
+            value && eqColor(value, c)
+              ? "border-charcoal scale-110"
+              : "border-charcoal/20"
+          }`}
+          style={{ background: c }}
+          aria-label={c}
+        />
+      ))}
     </div>
   );
 }
