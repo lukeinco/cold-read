@@ -166,17 +166,22 @@ function EditorDashboard({
     }
     let alive = true;
     (async () => {
-      const opts = assessmentsForOrgAdminQueryOptions(orgId);
-      try {
-        const list = await opts.queryFn!({} as never);
-        if (!alive) return;
-        setAssessments(list);
-        setAssessmentId((prev) =>
-          prev && list.some((a) => a.id === prev) ? prev : list[0]?.id ?? null,
-        );
-      } catch (e) {
-        if (alive) setError(e instanceof Error ? e.message : "Couldn't load assessments");
+      const { data, error } = await supabase
+        .from("assessments")
+        .select("id, org_id, slug, name, is_active, theme_id, title_font, body_font")
+        .eq("org_id", orgId)
+        .order("is_active", { ascending: false })
+        .order("created_at", { ascending: true });
+      if (!alive) return;
+      if (error) {
+        setError(error.message);
+        return;
       }
+      const list = (data ?? []) as Assessment[];
+      setAssessments(list);
+      setAssessmentId((prev) =>
+        prev && list.some((a) => a.id === prev) ? prev : list[0]?.id ?? null,
+      );
     })();
     return () => {
       alive = false;
