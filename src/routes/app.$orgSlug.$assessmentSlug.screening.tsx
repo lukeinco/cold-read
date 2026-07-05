@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { getPromptPlayer } from "@/lib/promptPlayer";
-import { orgBySlugQueryOptions } from "@/lib/org-queries";
+import { assessmentBySlugsQueryOptions } from "@/lib/org-queries";
 
 export type SegmentType =
   | "audio"
