@@ -4,6 +4,19 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import * as mic from "@/lib/mic";
 import { loadAdminOrgs, type Org, type Assessment } from "@/lib/org-queries";
+import { PresentationPanel } from "@/components/admin/PresentationPanel";
+import {
+  DEFAULT_BODY_FONT,
+  DEFAULT_TITLE_FONT,
+  fontStack,
+} from "@/config/fonts";
+import {
+  type Theme,
+  contrastRatio,
+  eqColor,
+  inPalette,
+  themeSwatches,
+} from "@/lib/themes";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
@@ -36,6 +49,8 @@ type Segment = {
   is_active: boolean;
   cue_color: string;
   cue_label: string;
+  override_card_color: string | null;
+  override_text_color: string | null;
   created_at: string;
   updated_at: string;
 };
