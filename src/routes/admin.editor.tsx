@@ -1430,3 +1430,156 @@ function AddSegmentMenu({ onAdd }: { onAdd: (kind: SegmentType) => void }) {
     </div>
   );
 }
+
+/* --------------------------- Response step preview + overrides --------------------------- */
+
+function ResponseStepPreview({
+  theme,
+  titleFont,
+  bodyFont,
+  cueLabel,
+  scriptText,
+  overrideCard,
+  overrideText,
+}: {
+  theme: Theme;
+  titleFont: string;
+  bodyFont: string;
+  cueLabel: string;
+  scriptText: string;
+  overrideCard: string | null;
+  overrideText: string | null;
+}) {
+  const bg = theme.bg_color ?? "#0C1A22";
+  const card = overrideCard ?? theme.card_color ?? "#1B3A32";
+  const text = overrideText ?? theme.text_color ?? "#EDF2EE";
+  const accent = theme.accent_color ?? "#E8B84B";
+  return (
+    <Field label="Candidate preview">
+      <div
+        className="w-full p-6 flex flex-col items-center"
+        style={{ background: bg }}
+      >
+        <div
+          className="w-full max-w-md p-6 rounded-md"
+          style={{ background: card, color: text }}
+        >
+          <div
+            className="uppercase text-xs tracking-[0.28em] mb-3"
+            style={{ fontFamily: fontStack(titleFont, DEFAULT_TITLE_FONT), color: accent }}
+          >
+            {cueLabel || "Cue label"}
+          </div>
+          <div
+            className="text-base leading-relaxed"
+            style={{ fontFamily: fontStack(bodyFont, DEFAULT_BODY_FONT), color: text }}
+          >
+            {scriptText.trim() || "Script text preview…"}
+          </div>
+        </div>
+      </div>
+    </Field>
+  );
+}
+
+function ColorsOverrideField({
+  theme,
+  overrideCard,
+  overrideText,
+  onCard,
+  onText,
+}: {
+  theme: Theme | null;
+  overrideCard: string | null;
+  overrideText: string | null;
+  onCard: (c: string | null) => void;
+  onText: (c: string | null) => void;
+}) {
+  if (!theme) {
+    return (
+      <Field label="Colors">
+        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50">
+          Loading theme…
+        </p>
+      </Field>
+    );
+  }
+  const palette = themeSwatches(theme);
+  const resolvedCard = overrideCard ?? theme.card_color ?? "#1B3A32";
+  const resolvedText = overrideText ?? theme.text_color ?? "#EDF2EE";
+  const ratio = contrastRatio(resolvedCard, resolvedText);
+  const lowContrast = ratio != null && ratio < 4.5;
+
+  return (
+    <Field label="Colors">
+      <div className="space-y-4">
+        <ColorRow
+          label="Card"
+          palette={palette}
+          value={overrideCard}
+          inherited={theme.card_color ?? null}
+          onChange={onCard}
+        />
+        <ColorRow
+          label="Text"
+          palette={palette}
+          value={overrideText}
+          inherited={theme.text_color ?? null}
+          onChange={onText}
+        />
+        {lowContrast && (
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-primary">
+            <span aria-hidden>⚠</span>
+            Low contrast — {ratio!.toFixed(2)}:1 (WCAG AA needs 4.5:1)
+          </p>
+        )}
+      </div>
+    </Field>
+  );
+}
+
+function ColorRow({
+  label,
+  palette,
+  value,
+  inherited,
+  onChange,
+}: {
+  label: string;
+  palette: string[];
+  value: string | null;
+  inherited: string | null;
+  onChange: (c: string | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/70 w-12">
+        {label}
+      </span>
+      <button
+        onClick={() => onChange(null)}
+        className={`px-2 py-1 border font-mono text-[10px] uppercase tracking-[0.24em] transition-colors ${
+          value == null
+            ? "border-charcoal bg-charcoal/[0.06] text-charcoal"
+            : "border-charcoal/30 text-charcoal/70 hover:border-charcoal"
+        }`}
+        title={inherited ? `Inherit theme (${inherited})` : "Inherit theme"}
+      >
+        Inherit
+      </button>
+      {palette.map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={`h-7 w-7 border-2 transition-all ${
+            value && eqColor(value, c)
+              ? "border-charcoal scale-110"
+              : "border-charcoal/20"
+          }`}
+          style={{ background: c }}
+          aria-label={c}
+        />
+      ))}
+    </div>
+  );
+}
