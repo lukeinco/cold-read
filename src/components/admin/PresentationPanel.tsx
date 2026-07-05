@@ -29,7 +29,6 @@ export function PresentationPanel({ assessment, orgId, onAssessmentChange }: Pro
         .select(
           "id, name, bg_color, card_color, text_color, accent_color, muted_color, is_preset, created_by",
         )
-        .or(`is_preset.eq.true,created_by.eq.${orgId}`)
         .order("is_preset", { ascending: false })
         .order("name", { ascending: true });
       if (!alive) return;
