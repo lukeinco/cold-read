@@ -138,14 +138,25 @@ function EditorDashboard() {
   async function handleAdd(kind: SegmentType) {
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
-    const isAudio = kind === "audio";
+    const defaults: Partial<Segment> = (() => {
+      switch (kind) {
+        case "audio":
+          return { cue_color: "#2B2B28", cue_label: "Prospect audio" };
+        case "text":
+          return { cue_color: "#2B2B28", cue_label: "New title" };
+        case "text_entry":
+          return { cue_color: "#3D5E4A", cue_label: "Your response" };
+        default:
+          return { cue_color: "#3D5E4A", cue_label: "New segment" };
+      }
+    })();
     const { data, error } = await supabase
       .from("segments")
       .insert({
         sort_order: nextOrder,
         type: kind,
-        cue_color: isAudio ? "#2B2B28" : "#3D5E4A",
-        cue_label: isAudio ? "Prospect audio" : "New segment",
+        cue_color: defaults.cue_color!,
+        cue_label: defaults.cue_label!,
         is_active: false,
       })
       .select("*")
