@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
 import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
+import { Route as AdminThemesRouteImport } from './routes/admin.themes'
 import { Route as AdminSignupRouteImport } from './routes/admin.signup'
 import { Route as AdminReviewRouteImport } from './routes/admin.review'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -54,6 +55,11 @@ const ApiSubmitSessionRoute = ApiSubmitSessionRouteImport.update({
 const ApiSaveRecordingRoute = ApiSaveRecordingRouteImport.update({
   id: '/api/save-recording',
   path: '/api/save-recording',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThemesRoute = AdminThemesRouteImport.update({
+  id: '/admin/themes',
+  path: '/admin/themes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSignupRoute = AdminSignupRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/review': typeof AdminReviewRoute
   '/admin/signup': typeof AdminSignupRoute
+  '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/review': typeof AdminReviewRoute
   '/admin/signup': typeof AdminSignupRoute
+  '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin': typeof AdminIndexRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/review': typeof AdminReviewRoute
   '/admin/signup': typeof AdminSignupRoute
+  '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/review'
     | '/admin/signup'
+    | '/admin/themes'
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/review'
     | '/admin/signup'
+    | '/admin/themes'
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/review'
     | '/admin/signup'
+    | '/admin/themes'
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AdminReviewRoute: typeof AdminReviewRoute
   AdminSignupRoute: typeof AdminSignupRoute
+  AdminThemesRoute: typeof AdminThemesRoute
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
   ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/api/save-recording'
       fullPath: '/api/save-recording'
       preLoaderRoute: typeof ApiSaveRecordingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/themes': {
+      id: '/admin/themes'
+      path: '/admin/themes'
+      fullPath: '/admin/themes'
+      preLoaderRoute: typeof AdminThemesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/signup': {
@@ -380,6 +400,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AdminReviewRoute: AdminReviewRoute,
   AdminSignupRoute: AdminSignupRoute,
+  AdminThemesRoute: AdminThemesRoute,
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
   ApiSubmitSessionRoute: ApiSubmitSessionRoute,
   AdminIndexRoute: AdminIndexRoute,
