@@ -77,6 +77,26 @@
   --font-serif: "Fraunces", "Georgia", serif;
   --font-mono: "IBM Plex Mono", "Menlo", monospace;
   --font-sans: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+
+  /* Readability pass — bump the whole type scale one notch so labels,
+   * body copy, table cells, and captions all read comfortably. Tailwind
+   * text-* utilities inherit these. */
+  --text-xs: 0.8125rem;      /* 13px */
+  --text-xs--line-height: 1.15rem;
+  --text-sm: 0.9375rem;      /* 15px */
+  --text-sm--line-height: 1.4rem;
+  --text-base: 1.0625rem;    /* 17px */
+  --text-base--line-height: 1.6rem;
+  --text-lg: 1.1875rem;      /* 19px */
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;       /* 22px */
+  --text-xl--line-height: 1.9rem;
+  --text-2xl: 1.6875rem;     /* 27px */
+  --text-2xl--line-height: 2.1rem;
+  --text-3xl: 2.125rem;      /* 34px */
+  --text-3xl--line-height: 2.4rem;
+  --text-4xl: 2.625rem;      /* 42px */
+  --text-4xl--line-height: 2.9rem;
 }
 
 :root {
@@ -90,10 +110,10 @@
   --parchment: #0C1A22;                    /* harbor — page ground */
   --juniper:   #1B3A32;                    /* wet fir — surfaces / cards */
   --fog-fir:   #2A4A40;                    /* borders / dividers */
-  --charcoal:  #EDF2EE;                    /* sea salt — primary text */
-  --drift:     #9DB0B2;                    /* muted / secondary text */
-  --iron:      #E8B84B;                    /* dock-lamp amber — accent */
-  --on-accent: #241B04;                    /* pitch — text on amber fills */
+  --charcoal:  #F2F6F2;                    /* sea salt — primary text (brighter for AAA) */
+  --drift:     #B8CACD;                    /* muted / secondary text (brighter for AA on wet fir) */
+  --iron:      #F0C255;                    /* dock-lamp amber — accent (nudged for legibility) */
+  --on-accent: #1A1204;                    /* pitch — text on amber fills */
 
   /* Semantic mapping (shadcn / tailwind theme) */
   --background: var(--parchment);
@@ -164,12 +184,23 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
+    font-size: var(--text-base);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  /* Neutralise fragile 10-12px hardcoded literals across chrome. */
+  .text-\[10px\], .text-\[11px\], .text-\[12px\] {
+    font-size: var(--text-xs) !important;
   }
 }
 
