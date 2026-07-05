@@ -349,7 +349,7 @@ function SegmentEditor({
   const isText = type === "text";
   const isTextEntry = type === "text_entry";
   const hasScript = type === "scripted" || isText || isTextEntry;
-  const hasCountdown = !isAudio && !isText;
+  const hasCountdown = true;
   const hasColor = !isAudio;
 
   function handleTypeChange(next: SegmentType) {
