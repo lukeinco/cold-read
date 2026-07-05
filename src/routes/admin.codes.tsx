@@ -99,18 +99,21 @@ function CodesDashboard() {
     setCodes((data as InviteCode[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    supabase
+  const loadOrgs = useCallback(async () => {
+    const { data } = await supabase
       .from("orgs")
-      .select("id,name")
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        const list = (data as Org[]) ?? [];
-        setOrgs(list);
-        if (list[0]) setOrgId(list[0].id);
-      });
+      .select("id,name,slug")
+      .order("name", { ascending: true });
+    const list = (data as Org[]) ?? [];
+    setOrgs(list);
+    setOrgId((prev) => prev || list[0]?.id || "");
+  }, []);
+
+  useEffect(() => {
+    void loadOrgs();
     void loadCodes();
-  }, [loadCodes]);
+  }, [loadOrgs, loadCodes]);
+
 
   async function handleGenerate() {
     if (!orgId) return;
