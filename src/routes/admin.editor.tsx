@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import * as mic from "@/lib/mic";
+import { loadAdminOrgs, type Org } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
