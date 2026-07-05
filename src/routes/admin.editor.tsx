@@ -145,6 +145,8 @@ function EditorDashboard({
   const [dragId, setDragId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[] | null>(null);
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAdminOrgs({ userId, isSuperadmin })
@@ -155,15 +157,41 @@ function EditorDashboard({
       .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load orgs"));
   }, [userId, isSuperadmin]);
 
-  const load = useCallback(async () => {
+  // Load assessments for selected org
+  useEffect(() => {
     if (!orgId) {
+      setAssessments(null);
+      setAssessmentId(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const opts = assessmentsForOrgAdminQueryOptions(orgId);
+      try {
+        const list = await opts.queryFn!({} as never);
+        if (!alive) return;
+        setAssessments(list);
+        setAssessmentId((prev) =>
+          prev && list.some((a) => a.id === prev) ? prev : list[0]?.id ?? null,
+        );
+      } catch (e) {
+        if (alive) setError(e instanceof Error ? e.message : "Couldn't load assessments");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [orgId]);
+
+  const load = useCallback(async () => {
+    if (!assessmentId) {
       setSegments([]);
       return;
     }
     const { data, error } = await supabase
       .from("segments")
       .select("*")
-      .eq("org_id", orgId)
+      .eq("assessment_id", assessmentId)
       .order("sort_order", { ascending: true });
     if (error) {
       setError(error.message);
@@ -174,14 +202,14 @@ function EditorDashboard({
     setSelectedId((prev) =>
       prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
     );
-  }, [orgId]);
+  }, [assessmentId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleAdd(kind: SegmentType) {
-    if (!orgId) return;
+    if (!orgId || !assessmentId) return;
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
     const defaults: Partial<Segment> = (() => {
@@ -200,6 +228,7 @@ function EditorDashboard({
       .from("segments")
       .insert({
         org_id: orgId,
+        assessment_id: assessmentId,
         sort_order: nextOrder,
         type: kind,
         cue_color: defaults.cue_color!,
