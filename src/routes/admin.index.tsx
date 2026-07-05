@@ -19,6 +19,7 @@ function AdminHub() {
   const [session, setSession] = useState<Session | null>(null);
   const [checked, setChecked] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -28,13 +29,27 @@ function AdminHub() {
           .from("user_roles")
           .select("role")
           .eq("user_id", data.session.user.id);
-        setIsSuperadmin(!!roles?.some((r) => r.role === "superadmin"));
+        const superAdmin = !!roles?.some((r) => r.role === "superadmin");
+        setIsSuperadmin(superAdmin);
+        try {
+          const list = await loadAdminOrgs({
+            userId: data.session.user.id,
+            isSuperadmin: superAdmin,
+          });
+          setOrgs(list);
+        } catch (e) {
+          console.error("loadAdminOrgs", e);
+          setOrgs([]);
+        }
       }
       setChecked(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (!s) setIsSuperadmin(false);
+      if (!s) {
+        setIsSuperadmin(false);
+        setOrgs(null);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -69,9 +84,24 @@ function AdminHub() {
           </button>
         </header>
 
-        <div className="mt-8">
-          <CopyScreeningLinkButton />
-        </div>
+        <section className="mt-8">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/60">
+            Screening links
+          </h2>
+          <div className="mt-3 space-y-3">
+            {orgs === null ? (
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/50">
+                Loading…
+              </p>
+            ) : orgs.length === 0 ? (
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/50">
+                No orgs yet.
+              </p>
+            ) : (
+              orgs.map((o) => <OrgScreeningLink key={o.id} org={o} />)
+            )}
+          </div>
+        </section>
 
         <ul className="mt-10 divide-y divide-charcoal/15 border-y border-charcoal/15">
           {links.map((l) => (
@@ -93,10 +123,12 @@ function AdminHub() {
   );
 }
 
-function CopyScreeningLinkButton() {
+function OrgScreeningLink({ org }: { org: Org }) {
   const [copied, setCopied] = useState(false);
   const url =
-    typeof window !== "undefined" ? `${window.location.origin}/` : "/";
+    typeof window !== "undefined"
+      ? `${window.location.origin}/app/${org.slug}`
+      : `/app/${org.slug}`;
 
   async function handleCopy() {
     try {
@@ -104,7 +136,6 @@ function CopyScreeningLinkButton() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      // fallback: select-and-prompt
       window.prompt("Copy screening link", url);
     }
   }
@@ -113,7 +144,7 @@ function CopyScreeningLinkButton() {
     <div className="flex items-center gap-4 border border-charcoal/25 p-4">
       <div className="flex-1 min-w-0">
         <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
-          Screening link
+          {org.name}
         </div>
         <div className="mt-1 font-mono text-sm text-charcoal truncate">{url}</div>
       </div>
@@ -126,4 +157,5 @@ function CopyScreeningLinkButton() {
     </div>
   );
 }
+
 
