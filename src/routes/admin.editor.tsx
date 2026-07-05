@@ -442,6 +442,7 @@ function EditorDashboard({
                     segment={s}
                     selected={selectedId === s.id}
                     dragging={dragId === s.id}
+                    activePalette={activePalette}
                     onSelect={() => setSelectedId(s.id)}
                     onDragStart={() => setDragId(s.id)}
                     onDrop={() => handleDropReorder(s.id)}
