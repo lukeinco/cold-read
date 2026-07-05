@@ -1064,6 +1064,43 @@ function SegmentCard({
     );
   }
 
+  const isText = segment.type === "text";
+  const isTextEntry = segment.type === "text_entry";
+
+  if (isText) {
+    const fg = readableOn(segment.cue_color);
+    return (
+      <li
+        {...commonProps}
+        className={`${commonProps.className} ${
+          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+        }`}
+        style={{ background: segment.cue_color, color: fg }}
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2" style={{ opacity: 0.7 }}>
+            <span className="font-mono text-[10px] uppercase tracking-[0.28em]">
+              ▤ Slide
+            </span>
+            {!segment.is_active && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ opacity: 0.6 }}>
+                · inactive
+              </span>
+            )}
+          </div>
+          <div className="mt-1 font-display uppercase text-sm tracking-wide truncate">
+            {segment.cue_label || "Untitled slide"}
+          </div>
+          {segment.script_text && (
+            <div className="mt-1 font-serif text-[11px] line-clamp-2" style={{ opacity: 0.85 }}>
+              <em>{segment.script_text}</em>
+            </div>
+          )}
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li
       {...commonProps}
@@ -1078,7 +1115,7 @@ function SegmentCard({
           aria-hidden
         />
         <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
-          {segment.type}
+          {isTextEntry ? "✎ Text response" : typeLabel(segment.type)}
         </span>
         {!segment.is_active && (
           <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
