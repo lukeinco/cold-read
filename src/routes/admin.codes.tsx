@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -169,12 +169,26 @@ function CodesDashboard() {
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
             COLD READ — CODES
           </h1>
-          <button
-            onClick={handleSignOut}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-6">
+            <Link
+              to="/admin"
+              className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
+            >
+              ← Admin
+            </Link>
+            <Link
+              to="/admin/themes"
+              className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
+            >
+              Themes
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
+            >
+              Sign out
+            </button>
+          </div>
         </header>
 
         <CreateOrgSection onCreated={loadOrgs} onError={setError} />

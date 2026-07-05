@@ -121,6 +121,7 @@ function AdminHub() {
   ];
   if (isSuperadmin) {
     links.push({ to: "/admin/codes", label: "Invite codes", desc: "Generate & revoke admin invites" });
+    links.push({ to: "/admin/themes", label: "Themes", desc: "Build custom themes for every org" });
   }
 
   return (
