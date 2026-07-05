@@ -322,6 +322,13 @@ function AudioCallPhase({ segment, onDone }: { segment: Segment; onDone: () => v
     return () => window.clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const cap = segment.countdownSeconds;
+    if (cap == null || cap <= 0) return;
+    const id = window.setTimeout(() => finish(), cap * 1000);
+    return () => window.clearTimeout(id);
+  }, [segment.countdownSeconds, finish]);
+
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
 
