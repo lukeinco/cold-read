@@ -82,7 +82,7 @@ function AdminLogin() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full font-mono text-sm uppercase tracking-[0.28em] bg-primary text-parchment py-4 disabled:opacity-40 hover:bg-primary/90 transition-colors"
+            className="w-full font-mono text-sm uppercase tracking-[0.28em] bg-primary text-on-accent py-4 disabled:opacity-40 hover:bg-primary/90 transition-colors"
           >
             {busy ? "Signing in…" : "Sign in"}
           </button>

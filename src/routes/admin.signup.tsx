@@ -102,7 +102,7 @@ function AdminSignup() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full font-mono text-sm uppercase tracking-[0.28em] bg-primary text-parchment py-4 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+            className="w-full font-mono text-sm uppercase tracking-[0.28em] bg-primary text-on-accent py-4 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
           >
             {busy ? "Creating…" : "Create account"}
           </button>

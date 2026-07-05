@@ -1162,7 +1162,7 @@ function BrowserRecorder({
         {state === "recording" && (
           <button
             onClick={stop}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-primary text-parchment px-3 py-2"
+            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-primary text-on-accent px-3 py-2"
           >
             ■ Stop
           </button>
