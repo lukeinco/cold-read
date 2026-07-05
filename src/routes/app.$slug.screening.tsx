@@ -50,7 +50,7 @@ const segmentsQueryOptions = queryOptions({
   queryFn: fetchSegments,
 });
 
-export const Route = createFileRoute("/screening")({
+export const Route = createFileRoute("/app/$slug/screening")({
   head: () => ({
     meta: [
       { title: "Screening — Cold Read" },
