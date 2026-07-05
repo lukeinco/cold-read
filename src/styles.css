@@ -5,14 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Cold Read — retrofuturist mid-century modern design system.
- * Warm, editorial, high-contrast, sharp corners, restrained.
+ * Cold Read — "Cannery Dusk" harbor identity for site chrome.
+ * Deep-water dark, wet-fir surfaces, dock-lamp amber accent.
  *
- * Palette:
- *   iron oxide  #C44A18  primary / accent
- *   juniper     #3D5E4A  secondary
- *   parchment   #F5F0E8  background
- *   charcoal    #2B2B28  text
+ * Palette (site chrome only; candidate flow themes are per-assessment):
+ *   harbor      #0C1A22  page background            (token: --parchment)
+ *   wet fir     #1B3A32  surfaces / cards / panels  (token: --juniper)
+ *   fog fir     #2A4A40  borders / dividers
+ *   sea salt    #EDF2EE  primary text               (token: --charcoal)
+ *   drift       #9DB0B2  muted / secondary text
+ *   dock lamp   #E8B84B  accent / links / actions   (token: --iron)
+ *   pitch       #241B04  text on amber fills        (token: --on-accent)
+ *
+ * The historical token names (parchment/charcoal/iron/juniper) are kept so
+ * existing components keep working; their VALUES now point at the new palette.
  */
 
 @theme inline {
@@ -49,6 +55,9 @@
   --color-juniper: var(--juniper);
   --color-parchment: var(--parchment);
   --color-charcoal: var(--charcoal);
+  --color-drift: var(--drift);
+  --color-fog-fir: var(--fog-fir);
+  --color-on-accent: var(--on-accent);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -64,10 +73,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-display: "Bebas Neue", "Impact", sans-serif;
-  --font-serif: "Cormorant Garamond", "Georgia", serif;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Fraunces", "Georgia", serif;
   --font-mono: "IBM Plex Mono", "Menlo", monospace;
-  --font-sans: "IBM Plex Mono", "Menlo", monospace;
+  --font-sans: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
