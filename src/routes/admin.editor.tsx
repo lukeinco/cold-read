@@ -392,33 +392,25 @@ function EditorDashboard({
 
         {assessments && orgId && (
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {assessments.length > 0 && (
-              <>
-                <span className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
-                  Assessment
-                </span>
-                <select
-                  value={assessmentId ?? ""}
-                  onChange={(e) => setAssessmentId(e.target.value)}
-                  className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-base text-charcoal focus:outline-none"
-                >
-                  {assessments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} {a.is_active ? "" : "· archived"}
-                    </option>
-                  ))}
-                </select>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={async () => {
+            <span className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+              Assessment
+            </span>
+            <select
+              value={assessmentId ?? ""}
+              onChange={async (e) => {
+                if (e.target.value !== "__new__") {
+                  setAssessmentId(e.target.value);
+                  return;
+                }
                 const name = window.prompt("New assessment name?")?.trim();
+                // Reset select to previous value before doing async work
+                e.target.value = assessmentId ?? "";
                 if (!name) return;
-                const baseSlug = name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, "-")
-                  .replace(/(^-|-$)/g, "") || "assessment";
+                const baseSlug =
+                  name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/(^-|-$)/g, "") || "assessment";
                 let slug = baseSlug;
                 let n = 2;
                 while ((assessments ?? []).some((a) => a.slug === slug)) {
@@ -437,12 +429,24 @@ function EditorDashboard({
                 setAssessments((prev) => [...(prev ?? []), created]);
                 setAssessmentId(created.id);
               }}
-              className="font-mono text-xs uppercase tracking-[0.24em] border border-charcoal/40 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary transition-colors"
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-base text-charcoal focus:outline-none"
             >
-              + New assessment
-            </button>
+              {assessments.length === 0 && (
+                <option value="" disabled>
+                  No assessments yet
+                </option>
+              )}
+              {assessments.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} {a.is_active ? "" : "· archived"}
+                </option>
+              ))}
+              <option value="__new__">+ New assessment…</option>
+            </select>
           </div>
         )}
+
+
 
 
         {error && (
@@ -1300,39 +1304,42 @@ function SegmentCard({
       <li
         {...commonProps}
         className={`${commonProps.className} ${
-          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+          selected ? "ring-2 ring-inset ring-iron/70" : ""
         }`}
-        style={{ background: "#2B2B28" }}
+        style={{ background: "#12241E" }}
       >
-        <div className="px-4 py-3 text-parchment">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.28em]" style={{ color: "#3D5E4A" }}>
+        <div className="px-4 py-3 text-charcoal">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="font-mono text-xs uppercase tracking-[0.24em] font-semibold"
+              style={{ color: "#8FCBB0" }}
+            >
               ● Call
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/60">
+            <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/80">
               Prospect audio
             </span>
             {!segment.is_active && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/40">
+              <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/60">
                 · inactive
               </span>
             )}
             <span
-              className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em]"
-              style={{ color: path ? "#3D5E4A" : "var(--destructive)" }}
+              className="ml-auto font-mono text-xs uppercase tracking-[0.22em] font-semibold"
+              style={{ color: path ? "#8FCBB0" : "#F0866E" }}
               title={path ? "Audio attached" : "No audio"}
             >
               {path ? "♪ audio" : "no audio"}
             </span>
           </div>
-          <div className="mt-1 font-serif text-sm text-parchment/95">
+          <div className="mt-1.5 font-serif text-base leading-snug text-charcoal">
             {segment.cue_label}
           </div>
           {signedUrl && (
             <audio
               controls
               src={signedUrl}
-              className="mt-2 w-full h-8"
+              className="mt-2 w-full h-9 [color-scheme:dark]"
               onClick={(e) => e.stopPropagation()}
             />
           )}
@@ -1340,6 +1347,7 @@ function SegmentCard({
       </li>
     );
   }
+
 
   const isText = segment.type === "text";
   const isTextEntry = segment.type === "text_entry";
