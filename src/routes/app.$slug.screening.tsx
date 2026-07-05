@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { getPromptPlayer } from "@/lib/promptPlayer";
+import { orgBySlugQueryOptions } from "@/lib/org-queries";
 
 export type SegmentType =
   | "audio"
@@ -25,30 +26,31 @@ export interface Segment {
   cueLabel: string;
 }
 
-async function fetchSegments(): Promise<Segment[]> {
-  const { data, error } = await supabase
-    .from("segments")
-    .select(
-      "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label",
-    )
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map((r) => ({
-    id: r.id as string,
-    type: r.type as SegmentType,
-    promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
-    scriptText: (r.script_text as string | null) ?? null,
-    countdownSeconds: (r.countdown_seconds as number | null) ?? null,
-    cueColor: r.cue_color as string,
-    cueLabel: r.cue_label as string,
-  }));
+function segmentsForOrgQueryOptions(orgId: string) {
+  return queryOptions({
+    queryKey: ["segments", "active", "org", orgId],
+    queryFn: async (): Promise<Segment[]> => {
+      const { data, error } = await supabase
+        .from("segments")
+        .select(
+          "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label",
+        )
+        .eq("org_id", orgId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        id: r.id as string,
+        type: r.type as SegmentType,
+        promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
+        scriptText: (r.script_text as string | null) ?? null,
+        countdownSeconds: (r.countdown_seconds as number | null) ?? null,
+        cueColor: r.cue_color as string,
+        cueLabel: r.cue_label as string,
+      }));
+    },
+  });
 }
-
-const segmentsQueryOptions = queryOptions({
-  queryKey: ["segments", "active"],
-  queryFn: fetchSegments,
-});
 
 export const Route = createFileRoute("/app/$slug/screening")({
   head: () => ({
@@ -57,7 +59,12 @@ export const Route = createFileRoute("/app/$slug/screening")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(segmentsQueryOptions),
+  loader: async ({ context, params }) => {
+    const org = await context.queryClient.ensureQueryData(
+      orgBySlugQueryOptions(params.slug),
+    );
+    await context.queryClient.ensureQueryData(segmentsForOrgQueryOptions(org.id));
+  },
   component: Screening,
   errorComponent: ({ error }) => (
     <main className="min-h-screen flex items-center justify-center bg-parchment px-6">
