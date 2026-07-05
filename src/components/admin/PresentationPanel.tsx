@@ -12,11 +12,10 @@ import { type Theme, themeSwatches } from "@/lib/themes";
 
 type Props = {
   assessment: Assessment;
-  orgId: string;
   onAssessmentChange: (a: Assessment) => void;
 };
 
-export function PresentationPanel({ assessment, orgId, onAssessmentChange }: Props) {
+export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
   const [themes, setThemes] = useState<Theme[] | null>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
