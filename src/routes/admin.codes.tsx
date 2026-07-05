@@ -287,3 +287,98 @@ function formatDate(iso: string | null) {
     day: "2-digit",
   });
 }
+
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+function CreateOrgSection({
+  onCreated,
+  onError,
+}: {
+  onCreated: () => Promise<void> | void;
+  onError: (m: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const effectiveSlug = slugTouched ? slug : slugify(name);
+  const valid =
+    name.trim().length >= 2 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(effectiveSlug);
+
+  async function handleCreate() {
+    if (!valid) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("orgs")
+      .insert({ name: name.trim(), slug: effectiveSlug });
+    setBusy(false);
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) {
+        onError(`Slug "${effectiveSlug}" is already taken.`);
+      } else {
+        onError(error.message);
+      }
+      return;
+    }
+    setName("");
+    setSlug("");
+    setSlugTouched(false);
+    await onCreated();
+  }
+
+  return (
+    <section className="mt-8 border border-charcoal/25 bg-parchment p-6">
+      <h2 className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal">
+        Create org
+      </h2>
+      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto] items-end">
+        <label className="block">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+            Name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Acme Sales"
+            className="mt-2 w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+          />
+        </label>
+        <label className="block">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+            Slug (URL)
+          </span>
+          <input
+            value={effectiveSlug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugTouched(true);
+            }}
+            placeholder="acme-sales"
+            className="mt-2 w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+          />
+        </label>
+        <button
+          onClick={handleCreate}
+          disabled={!valid || busy}
+          className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
+        >
+          {busy ? "Creating…" : "Create"}
+        </button>
+      </div>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+        Screening URL will be /app/{effectiveSlug || "your-slug"}
+      </p>
+    </section>
+  );
+}
+
