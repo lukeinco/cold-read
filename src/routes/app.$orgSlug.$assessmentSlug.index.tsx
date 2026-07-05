@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { unlockPromptPlayer } from "@/lib/promptPlayer";
-import { assessmentBySlugsQueryOptions } from "@/lib/org-queries";
+import { themedAssessmentQueryOptions } from "@/lib/assessment-theme";
 
 export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(
-      assessmentBySlugsQueryOptions(params.orgSlug, params.assessmentSlug),
+      themedAssessmentQueryOptions(params.orgSlug, params.assessmentSlug),
     ),
   component: Landing,
 });
@@ -27,7 +27,7 @@ function Landing() {
   const navigate = useNavigate();
   const { orgSlug, assessmentSlug } = Route.useParams();
   const { data } = useSuspenseQuery(
-    assessmentBySlugsQueryOptions(orgSlug, assessmentSlug),
+    themedAssessmentQueryOptions(orgSlug, assessmentSlug),
   );
   const { org, assessment } = data;
   const { setSession } = useSession();
@@ -93,8 +93,8 @@ function Landing() {
   return (
     <main className="min-h-screen flex flex-col">
       {!chromeOk && (
-        <div className="w-full border-b border-charcoal/15 bg-juniper text-parchment">
-          <div className="mx-auto max-w-3xl px-6 py-2.5 font-mono text-xs uppercase tracking-[0.18em]">
+        <div className="w-full border-b a-border-muted a-accent-bg">
+          <div className="mx-auto max-w-3xl px-6 py-2.5 a-font-body text-xs uppercase tracking-[0.18em] a-bg" style={{ backgroundColor: "transparent", color: "var(--a-bg)" }}>
             Cold Read works best in Google Chrome.
           </div>
         </div>
@@ -102,47 +102,50 @@ function Landing() {
 
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-2xl">
-          <div className="mb-10 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] text-iron">
-            <span className="h-px w-8 bg-iron" />
+          <div className="mb-10 flex items-center gap-3 a-font-body text-[11px] uppercase tracking-[0.28em] a-muted">
+            <span className="h-px w-8" style={{ backgroundColor: "var(--a-muted)" }} />
             <span>
               {assessment.name} · {org.name}
             </span>
           </div>
 
-          <h1 className="font-display text-[clamp(4rem,14vw,9rem)] leading-[0.85] text-charcoal">
+          <h1 className="a-font-title a-text leading-[0.85]" style={{ fontSize: "clamp(4rem,14vw,9rem)" }}>
             Cold
             <br />
             Read
           </h1>
 
-          <p className="mt-8 font-serif text-2xl leading-snug text-charcoal/90 md:text-3xl">
-            <em>A short voice screening for the outbound role. About 10 minutes.</em>
+          <p className="mt-8 a-font-body text-2xl leading-snug a-text md:text-3xl" style={{ opacity: 0.9 }}>
+            <em>A short voice screening. About 10 minutes.</em>
           </p>
 
           <section
             aria-labelledby="prep-title"
-            className="mt-12 border border-charcoal/25 bg-parchment"
+            className="mt-12 border a-border-muted a-card-bg"
           >
-            <header className="flex items-center justify-between border-b border-charcoal/25 px-5 py-3">
+            <header className="flex items-center justify-between border-b a-border-muted px-5 py-3">
               <h2
                 id="prep-title"
-                className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal"
+                className="a-font-body text-xs uppercase tracking-[0.22em] a-text"
               >
                 Before you start
               </h2>
-              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-charcoal/60">
+              <span className="a-font-body text-[10px] uppercase tracking-[0.22em] a-muted">
                 04 items
               </span>
             </header>
-            <ul className="divide-y divide-charcoal/15 font-mono text-sm text-charcoal">
+            <ul className="a-font-body text-sm a-text" style={{ borderColor: "var(--a-muted)" }}>
               {[
                 "Google Chrome",
                 "A laptop (not a phone)",
                 "A wired headset with mic",
                 "A quiet room",
               ].map((item, i) => (
-                <li key={item} className="flex items-baseline gap-4 px-5 py-3">
-                  <span className="w-6 text-iron tabular-nums">
+                <li
+                  key={item}
+                  className="flex items-baseline gap-4 px-5 py-3 border-t a-border-muted first:border-t-0"
+                >
+                  <span className="w-6 a-muted tabular-nums">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="uppercase tracking-wider">{item}</span>
@@ -153,11 +156,11 @@ function Landing() {
 
           <div className="mt-10">
             {micState === "denied" || micState === "error" ? (
-              <div role="alert" className="border border-charcoal bg-parchment p-6">
-                <p className="font-display text-2xl tracking-wide text-charcoal">
+              <div role="alert" className="border a-border-text a-card-bg p-6">
+                <p className="a-font-title text-2xl a-text">
                   {micState === "denied" ? "Microphone blocked" : "Couldn't start"}
                 </p>
-                <p className="mt-2 font-serif text-lg text-charcoal/85">
+                <p className="mt-2 a-font-body text-lg a-text" style={{ opacity: 0.85 }}>
                   {micState === "denied"
                     ? "We need your microphone to continue. Enable it in Chrome and refresh."
                     : errorMsg}
@@ -167,7 +170,8 @@ function Landing() {
                     setMicState("idle");
                     handleBegin();
                   }}
-                  className="mt-5 inline-flex items-center gap-3 border border-charcoal bg-transparent px-6 py-3 font-mono text-xs uppercase tracking-[0.22em] text-charcoal transition-colors hover:bg-charcoal hover:text-parchment"
+                  className="mt-5 inline-flex items-center gap-3 border a-border-text a-text a-font-body text-xs uppercase tracking-[0.22em] px-6 py-3"
+                  style={{ backgroundColor: "transparent" }}
                 >
                   <span>Retry</span>
                   <span aria-hidden>→</span>
@@ -177,7 +181,8 @@ function Landing() {
               <button
                 onClick={handleBegin}
                 disabled={micState === "requesting"}
-                className="group inline-flex items-center gap-4 bg-iron px-8 py-4 font-mono text-sm uppercase tracking-[0.28em] text-parchment transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+                className="group inline-flex items-center gap-4 a-accent-bg a-font-body text-sm uppercase tracking-[0.28em] px-8 py-4 transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+                style={{ color: "var(--a-bg)" }}
               >
                 <span>{micState === "requesting" ? "Requesting mic…" : "Begin"}</span>
                 <span aria-hidden className="transition-transform group-hover:translate-x-1">
@@ -185,15 +190,15 @@ function Landing() {
                 </span>
               </button>
             )}
-            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.22em] text-charcoal/60">
+            <p className="mt-4 a-font-body text-[11px] uppercase tracking-[0.22em] a-muted">
               By continuing you consent to being recorded.
             </p>
           </div>
         </div>
       </div>
 
-      <footer className="border-t border-charcoal/15 px-6 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/55">
+      <footer className="border-t a-border-muted px-6 py-4">
+        <div className="mx-auto flex max-w-2xl items-center justify-between a-font-body text-[10px] uppercase tracking-[0.28em] a-muted">
           <span>Cold Read</span>
           <span>Audio only · No video</span>
         </div>
