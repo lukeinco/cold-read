@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessments: {
+        Row: {
+          body_font: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          org_id: string
+          slug: string
+          theme_id: string | null
+          title_font: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_font?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          org_id: string
+          slug: string
+          theme_id?: string | null
+          title_font?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_font?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          slug?: string
+          theme_id?: string | null
+          title_font?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_codes: {
         Row: {
           code: string
@@ -180,6 +227,7 @@ export type Database = {
       }
       segments: {
         Row: {
+          assessment_id: string
           countdown_seconds: number | null
           created_at: string
           cue_color: string
@@ -194,6 +242,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assessment_id: string
           countdown_seconds?: number | null
           created_at?: string
           cue_color: string
@@ -208,6 +257,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assessment_id?: string
           countdown_seconds?: number | null
           created_at?: string
           cue_color?: string
@@ -223,6 +273,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "segments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "segments_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -233,6 +290,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          assessment_id: string
           client_token: string
           created_at: string
           email: string | null
@@ -242,6 +300,7 @@ export type Database = {
           submitted_at: string | null
         }
         Insert: {
+          assessment_id: string
           client_token?: string
           created_at?: string
           email?: string | null
@@ -251,6 +310,7 @@ export type Database = {
           submitted_at?: string | null
         }
         Update: {
+          assessment_id?: string
           client_token?: string
           created_at?: string
           email?: string | null
@@ -260,6 +320,13 @@ export type Database = {
           submitted_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sessions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sessions_org_id_fkey"
             columns: ["org_id"]

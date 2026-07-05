@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import * as mic from "@/lib/mic";
-import { loadAdminOrgs, type Org } from "@/lib/org-queries";
+import { loadAdminOrgs, type Org, type Assessment } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
@@ -27,6 +27,7 @@ type SegmentType =
 type Segment = {
   id: string;
   org_id: string | null;
+  assessment_id: string;
   sort_order: number;
   type: SegmentType;
   prompt_audio_path: string | null;
@@ -140,6 +141,8 @@ function EditorDashboard({
   const [dragId, setDragId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[] | null>(null);
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAdminOrgs({ userId, isSuperadmin })
@@ -150,15 +153,46 @@ function EditorDashboard({
       .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load orgs"));
   }, [userId, isSuperadmin]);
 
-  const load = useCallback(async () => {
+  // Load assessments for selected org
+  useEffect(() => {
     if (!orgId) {
+      setAssessments(null);
+      setAssessmentId(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("assessments")
+        .select("id, org_id, slug, name, is_active, theme_id, title_font, body_font")
+        .eq("org_id", orgId)
+        .order("is_active", { ascending: false })
+        .order("created_at", { ascending: true });
+      if (!alive) return;
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      const list = (data ?? []) as Assessment[];
+      setAssessments(list);
+      setAssessmentId((prev) =>
+        prev && list.some((a) => a.id === prev) ? prev : list[0]?.id ?? null,
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [orgId]);
+
+  const load = useCallback(async () => {
+    if (!assessmentId) {
       setSegments([]);
       return;
     }
     const { data, error } = await supabase
       .from("segments")
       .select("*")
-      .eq("org_id", orgId)
+      .eq("assessment_id", assessmentId)
       .order("sort_order", { ascending: true });
     if (error) {
       setError(error.message);
@@ -169,14 +203,14 @@ function EditorDashboard({
     setSelectedId((prev) =>
       prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
     );
-  }, [orgId]);
+  }, [assessmentId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleAdd(kind: SegmentType) {
-    if (!orgId) return;
+    if (!orgId || !assessmentId) return;
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
     const defaults: Partial<Segment> = (() => {
@@ -195,6 +229,7 @@ function EditorDashboard({
       .from("segments")
       .insert({
         org_id: orgId,
+        assessment_id: assessmentId,
         sort_order: nextOrder,
         type: kind,
         cue_color: defaults.cue_color!,
@@ -299,6 +334,30 @@ function EditorDashboard({
         {orgs && orgs.length === 1 && (
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
             Editing {orgs[0].name}
+          </p>
+        )}
+
+        {assessments && assessments.length > 0 && (
+          <div className="mt-4 flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+              Assessment
+            </span>
+            <select
+              value={assessmentId ?? ""}
+              onChange={(e) => setAssessmentId(e.target.value)}
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+            >
+              {assessments.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} {a.is_active ? "" : "· archived"}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {assessments && assessments.length === 0 && orgId && (
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
+            No assessments in this org yet — create one from the Admin hub.
           </p>
         )}
 

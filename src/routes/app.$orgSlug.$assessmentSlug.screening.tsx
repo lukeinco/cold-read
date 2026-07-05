@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { getPromptPlayer } from "@/lib/promptPlayer";
-import { orgBySlugQueryOptions } from "@/lib/org-queries";
+import { assessmentBySlugsQueryOptions } from "@/lib/org-queries";
 
 export type SegmentType =
   | "audio"
@@ -26,16 +26,16 @@ export interface Segment {
   cueLabel: string;
 }
 
-function segmentsForOrgQueryOptions(orgId: string) {
+function segmentsForAssessmentQueryOptions(assessmentId: string) {
   return queryOptions({
-    queryKey: ["segments", "active", "org", orgId],
+    queryKey: ["segments", "active", "assessment", assessmentId],
     queryFn: async (): Promise<Segment[]> => {
       const { data, error } = await supabase
         .from("segments")
         .select(
           "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label",
         )
-        .eq("org_id", orgId)
+        .eq("assessment_id", assessmentId)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
@@ -52,7 +52,7 @@ function segmentsForOrgQueryOptions(orgId: string) {
   });
 }
 
-export const Route = createFileRoute("/app/$slug/screening")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/screening")({
   head: () => ({
     meta: [
       { title: "Screening — Cold Read" },
@@ -60,10 +60,12 @@ export const Route = createFileRoute("/app/$slug/screening")({
     ],
   }),
   loader: async ({ context, params }) => {
-    const org = await context.queryClient.ensureQueryData(
-      orgBySlugQueryOptions(params.slug),
+    const { assessment } = await context.queryClient.ensureQueryData(
+      assessmentBySlugsQueryOptions(params.orgSlug, params.assessmentSlug),
     );
-    await context.queryClient.ensureQueryData(segmentsForOrgQueryOptions(org.id));
+    await context.queryClient.ensureQueryData(
+      segmentsForAssessmentQueryOptions(assessment.id),
+    );
   },
   component: Screening,
   errorComponent: ({ error }) => (
@@ -85,14 +87,18 @@ export const Route = createFileRoute("/app/$slug/screening")({
 type Phase = "cue" | "respond" | "upload";
 
 function Screening() {
-  const { slug } = Route.useParams();
-  const { data: org } = useSuspenseQuery(orgBySlugQueryOptions(slug));
+  const { orgSlug, assessmentSlug } = Route.useParams();
+  const { data } = useSuspenseQuery(
+    assessmentBySlugsQueryOptions(orgSlug, assessmentSlug),
+  );
   const { sessionId, sessionToken } = useSession();
-  const { data: segments } = useSuspenseQuery(segmentsForOrgQueryOptions(org.id));
+  const { data: segments } = useSuspenseQuery(
+    segmentsForAssessmentQueryOptions(data.assessment.id),
+  );
   const mediaStream = mic.getExisting();
 
   if (!sessionId || !sessionToken || !mediaStream) {
-    return <Navigate to="/app/$slug" params={{ slug }} />;
+    return <Navigate to="/app/$orgSlug/$assessmentSlug" params={{ orgSlug, assessmentSlug }} />;
   }
 
   if (segments.length === 0) {

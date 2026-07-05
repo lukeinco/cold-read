@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { unlockPromptPlayer } from "@/lib/promptPlayer";
-import { orgBySlugQueryOptions } from "@/lib/org-queries";
+import { assessmentBySlugsQueryOptions } from "@/lib/org-queries";
 
-export const Route = createFileRoute("/app/$slug/")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/")({
   loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(orgBySlugQueryOptions(params.slug)),
+    context.queryClient.ensureQueryData(
+      assessmentBySlugsQueryOptions(params.orgSlug, params.assessmentSlug),
+    ),
   component: Landing,
 });
 
@@ -23,8 +25,11 @@ function isChrome() {
 
 function Landing() {
   const navigate = useNavigate();
-  const { slug } = Route.useParams();
-  const { data: org } = useSuspenseQuery(orgBySlugQueryOptions(slug));
+  const { orgSlug, assessmentSlug } = Route.useParams();
+  const { data } = useSuspenseQuery(
+    assessmentBySlugsQueryOptions(orgSlug, assessmentSlug),
+  );
+  const { org, assessment } = data;
   const { setSession } = useSession();
   const [micState, setMicState] = useState<MicState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -39,11 +44,13 @@ function Landing() {
     const client_token = crypto.randomUUID();
     const { error } = await supabase
       .from("sessions")
-      // org_id required by RLS + not-null
-      .insert({ id, client_token, org_id: org.id });
+      .insert({ id, client_token, org_id: org.id, assessment_id: assessment.id });
     if (error) throw error;
     setSession(id, client_token);
-    navigate({ to: "/app/$slug/screening", params: { slug } });
+    navigate({
+      to: "/app/$orgSlug/$assessmentSlug/screening",
+      params: { orgSlug, assessmentSlug },
+    });
   };
 
   const handleBegin = async () => {
@@ -97,7 +104,9 @@ function Landing() {
         <div className="w-full max-w-2xl">
           <div className="mb-10 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] text-iron">
             <span className="h-px w-8 bg-iron" />
-            <span>Voice screening · {org.name}</span>
+            <span>
+              {assessment.name} · {org.name}
+            </span>
           </div>
 
           <h1 className="font-display text-[clamp(4rem,14vw,9rem)] leading-[0.85] text-charcoal">
