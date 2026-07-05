@@ -1368,6 +1368,13 @@ function SegmentCard({
             {segment.countdown_seconds}s
           </span>
         )}
+        {overrideOutOfPalette && (
+          <span
+            className={`${segment.countdown_seconds != null ? "ml-2" : "ml-auto"} inline-block h-2 w-2 rounded-full bg-primary`}
+            title="Override color is outside the current theme palette"
+            aria-label="Override color outside theme"
+          />
+        )}
       </div>
       <div className="mt-1 font-serif text-sm text-charcoal">
         {segment.cue_label}
