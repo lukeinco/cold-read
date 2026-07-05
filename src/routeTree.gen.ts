@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReviewRouteImport } from './routes/review'
-import { Route as FinishRouteImport } from './routes/finish'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
@@ -31,11 +30,6 @@ import { Route as AppOrgSlugAssessmentSlugFinishRouteImport } from './routes/app
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FinishRoute = FinishRouteImport.update({
-  id: '/finish',
-  path: '/finish',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -125,7 +119,6 @@ const AppOrgSlugAssessmentSlugFinishRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
@@ -145,7 +138,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
@@ -165,7 +157,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/finish': typeof FinishRoute
   '/review': typeof ReviewRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
@@ -187,7 +178,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/finish'
     | '/review'
     | '/admin/codes'
     | '/admin/editor'
@@ -207,7 +197,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/finish'
     | '/review'
     | '/admin/codes'
     | '/admin/editor'
@@ -226,7 +215,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/finish'
     | '/review'
     | '/admin/codes'
     | '/admin/editor'
@@ -247,7 +235,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FinishRoute: typeof FinishRoute
   ReviewRoute: typeof ReviewRoute
   AdminCodesRoute: typeof AdminCodesRoute
   AdminEditorRoute: typeof AdminEditorRoute
@@ -270,13 +257,6 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/finish': {
-      id: '/finish'
-      path: '/finish'
-      fullPath: '/finish'
-      preLoaderRoute: typeof FinishRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -415,7 +395,6 @@ const AppOrgSlugAssessmentSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FinishRoute: FinishRoute,
   ReviewRoute: ReviewRoute,
   AdminCodesRoute: AdminCodesRoute,
   AdminEditorRoute: AdminEditorRoute,
