@@ -6,7 +6,14 @@ import { useSession } from "@/context/session-context";
 import * as mic from "@/lib/mic";
 import { getPromptPlayer } from "@/lib/promptPlayer";
 
-export type SegmentType = "audio" | "warmup" | "question" | "scripted" | "improv";
+export type SegmentType =
+  | "audio"
+  | "text"
+  | "text_entry"
+  | "warmup"
+  | "question"
+  | "scripted"
+  | "improv";
 
 export interface Segment {
   id: string;
