@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/codes")({
   component: CodesPage,
 });
 
-type Org = { id: string; name: string };
+type Org = { id: string; name: string; slug: string };
 type InviteCode = {
   code: string;
   org_id: string;
@@ -99,18 +99,21 @@ function CodesDashboard() {
     setCodes((data as InviteCode[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    supabase
+  const loadOrgs = useCallback(async () => {
+    const { data } = await supabase
       .from("orgs")
-      .select("id,name")
-      .order("name", { ascending: true })
-      .then(({ data }) => {
-        const list = (data as Org[]) ?? [];
-        setOrgs(list);
-        if (list[0]) setOrgId(list[0].id);
-      });
+      .select("id,name,slug")
+      .order("name", { ascending: true });
+    const list = (data as Org[]) ?? [];
+    setOrgs(list);
+    setOrgId((prev) => prev || list[0]?.id || "");
+  }, []);
+
+  useEffect(() => {
+    void loadOrgs();
     void loadCodes();
-  }, [loadCodes]);
+  }, [loadOrgs, loadCodes]);
+
 
   async function handleGenerate() {
     if (!orgId) return;
@@ -173,6 +176,8 @@ function CodesDashboard() {
             Sign out
           </button>
         </header>
+
+        <CreateOrgSection onCreated={loadOrgs} onError={setError} />
 
         <section className="mt-8 border border-charcoal/25 bg-parchment p-6">
           <h2 className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal">
@@ -282,3 +287,98 @@ function formatDate(iso: string | null) {
     day: "2-digit",
   });
 }
+
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+function CreateOrgSection({
+  onCreated,
+  onError,
+}: {
+  onCreated: () => Promise<void> | void;
+  onError: (m: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const effectiveSlug = slugTouched ? slug : slugify(name);
+  const valid =
+    name.trim().length >= 2 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(effectiveSlug);
+
+  async function handleCreate() {
+    if (!valid) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("orgs")
+      .insert({ name: name.trim(), slug: effectiveSlug });
+    setBusy(false);
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) {
+        onError(`Slug "${effectiveSlug}" is already taken.`);
+      } else {
+        onError(error.message);
+      }
+      return;
+    }
+    setName("");
+    setSlug("");
+    setSlugTouched(false);
+    await onCreated();
+  }
+
+  return (
+    <section className="mt-8 border border-charcoal/25 bg-parchment p-6">
+      <h2 className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal">
+        Create org
+      </h2>
+      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto] items-end">
+        <label className="block">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+            Name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Acme Sales"
+            className="mt-2 w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+          />
+        </label>
+        <label className="block">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+            Slug (URL)
+          </span>
+          <input
+            value={effectiveSlug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugTouched(true);
+            }}
+            placeholder="acme-sales"
+            className="mt-2 w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
+          />
+        </label>
+        <button
+          onClick={handleCreate}
+          disabled={!valid || busy}
+          className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
+        >
+          {busy ? "Creating…" : "Create"}
+        </button>
+      </div>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+        Screening URL will be /app/{effectiveSlug || "your-slug"}
+      </p>
+    </section>
+  );
+}
+

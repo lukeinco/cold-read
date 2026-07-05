@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import * as mic from "@/lib/mic";
+import { loadAdminOrgs, type Org } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
@@ -77,6 +78,7 @@ function EditorPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [checked, setChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -86,15 +88,18 @@ function EditorPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", data.session.user.id);
-        setIsAdmin(
-          !!roles?.some((r) => r.role === "admin" || r.role === "superadmin"),
-        );
+        const rs = roles?.map((r) => r.role) ?? [];
+        setIsSuperadmin(rs.includes("superadmin"));
+        setIsAdmin(rs.includes("admin") || rs.includes("superadmin"));
       }
       setChecked(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (!s) setIsAdmin(false);
+      if (!s) {
+        setIsAdmin(false);
+        setIsSuperadmin(false);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -119,19 +124,41 @@ function EditorPage() {
     );
   }
 
-  return <EditorDashboard />;
+  return <EditorDashboard userId={session.user.id} isSuperadmin={isSuperadmin} />;
 }
 
-function EditorDashboard() {
+function EditorDashboard({
+  userId,
+  isSuperadmin,
+}: {
+  userId: string;
+  isSuperadmin: boolean;
+}) {
   const [segments, setSegments] = useState<Segment[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadAdminOrgs({ userId, isSuperadmin })
+      .then((list) => {
+        setOrgs(list);
+        setOrgId((prev) => prev ?? list[0]?.id ?? null);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load orgs"));
+  }, [userId, isSuperadmin]);
 
   const load = useCallback(async () => {
+    if (!orgId) {
+      setSegments([]);
+      return;
+    }
     const { data, error } = await supabase
       .from("segments")
       .select("*")
+      .eq("org_id", orgId)
       .order("sort_order", { ascending: true });
     if (error) {
       setError(error.message);
@@ -139,14 +166,17 @@ function EditorDashboard() {
     }
     const list = (data as Segment[]) ?? [];
     setSegments(list);
-    setSelectedId((prev) => prev ?? list[0]?.id ?? null);
-  }, []);
+    setSelectedId((prev) =>
+      prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
+    );
+  }, [orgId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleAdd(kind: SegmentType) {
+    if (!orgId) return;
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
     const defaults: Partial<Segment> = (() => {
@@ -164,6 +194,7 @@ function EditorDashboard() {
     const { data, error } = await supabase
       .from("segments")
       .insert({
+        org_id: orgId,
         sort_order: nextOrder,
         type: kind,
         cue_color: defaults.cue_color!,
@@ -180,6 +211,7 @@ function EditorDashboard() {
     setSegments((prev) => [...(prev ?? []), created]);
     setSelectedId(created.id);
   }
+
 
   async function handleDropReorder(targetId: string) {
     if (!dragId || !segments || dragId === targetId) {
@@ -246,11 +278,36 @@ function EditorDashboard() {
           </div>
         </header>
 
+        {orgs && orgs.length > 1 && (
+          <div className="mt-4 flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+              Org
+            </span>
+            <select
+              value={orgId ?? ""}
+              onChange={(e) => setOrgId(e.target.value)}
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+            >
+              {orgs.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {orgs && orgs.length === 1 && (
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+            Editing {orgs[0].name}
+          </p>
+        )}
+
         {error && (
           <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
             {error}
           </p>
         )}
+
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8">
           <aside className="border border-charcoal/25 bg-parchment">

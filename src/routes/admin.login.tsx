@@ -21,7 +21,7 @@ function AdminLogin() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/review" });
+      if (data.session) navigate({ to: "/admin" });
     });
   }, [navigate]);
 
@@ -35,7 +35,7 @@ function AdminLogin() {
       setBusy(false);
       return;
     }
-    navigate({ to: "/review" });
+    navigate({ to: "/admin" });
   }
 
   return (
