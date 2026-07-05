@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { orgBySlugQueryOptions } from "@/lib/org-queries";
+import { assessmentBySlugsQueryOptions } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug")({
   head: () => ({
@@ -9,7 +9,9 @@ export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug")({
     ],
   }),
   loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(orgBySlugQueryOptions(params.slug)),
+    context.queryClient.ensureQueryData(
+      assessmentBySlugsQueryOptions(params.orgSlug, params.assessmentSlug),
+    ),
   component: () => <Outlet />,
   notFoundComponent: NotFound,
   errorComponent: () => <NotFound />,
@@ -20,7 +22,7 @@ function NotFound() {
     <main className="min-h-screen flex items-center justify-center bg-parchment px-6">
       <div className="max-w-md text-center">
         <h1 className="font-display text-5xl md:text-6xl tracking-wide text-charcoal leading-none">
-          SCREENING
+          ASSESSMENT
           <br />
           NOT FOUND
         </h1>
