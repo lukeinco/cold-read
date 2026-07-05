@@ -1300,39 +1300,42 @@ function SegmentCard({
       <li
         {...commonProps}
         className={`${commonProps.className} ${
-          selected ? "ring-2 ring-inset ring-parchment/40" : ""
+          selected ? "ring-2 ring-inset ring-iron/70" : ""
         }`}
-        style={{ background: "#2B2B28" }}
+        style={{ background: "#12241E" }}
       >
-        <div className="px-4 py-3 text-parchment">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-[0.28em]" style={{ color: "#3D5E4A" }}>
+        <div className="px-4 py-3 text-charcoal">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="font-mono text-xs uppercase tracking-[0.24em] font-semibold"
+              style={{ color: "#8FCBB0" }}
+            >
               ● Call
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/60">
+            <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/80">
               Prospect audio
             </span>
             {!segment.is_active && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/40">
+              <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/60">
                 · inactive
               </span>
             )}
             <span
-              className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em]"
-              style={{ color: path ? "#3D5E4A" : "var(--destructive)" }}
+              className="ml-auto font-mono text-xs uppercase tracking-[0.22em] font-semibold"
+              style={{ color: path ? "#8FCBB0" : "#F0866E" }}
               title={path ? "Audio attached" : "No audio"}
             >
               {path ? "♪ audio" : "no audio"}
             </span>
           </div>
-          <div className="mt-1 font-serif text-sm text-parchment/95">
+          <div className="mt-1.5 font-serif text-base leading-snug text-charcoal">
             {segment.cue_label}
           </div>
           {signedUrl && (
             <audio
               controls
               src={signedUrl}
-              className="mt-2 w-full h-8"
+              className="mt-2 w-full h-9 [color-scheme:dark]"
               onClick={(e) => e.stopPropagation()}
             />
           )}
@@ -1340,6 +1343,7 @@ function SegmentCard({
       </li>
     );
   }
+
 
   const isText = segment.type === "text";
   const isTextEntry = segment.type === "text_entry";
