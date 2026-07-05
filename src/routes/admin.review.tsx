@@ -89,29 +89,84 @@ function ReviewPage() {
     );
   }
 
-  return <Dashboard userId={session.user.id} />;
+  return <Dashboard userId={session.user.id} isSuperadmin={false} />;
 }
 
-function Dashboard({ userId }: { userId: string }) {
+function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boolean }) {
   const [rows, setRows] = useState<SessionRow[] | null>(null);
   const [selected, setSelected] = useState<SessionRow | null>(null);
   const [activeSegments, setActiveSegments] = useState<SegmentMeta[]>([]);
   const [respCounts, setRespCounts] = useState<Record<string, { total: number; activeCovered: number }>>({});
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[] | null>(null);
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   useEffect(() => {
+    (async () => {
+      // Detect superadmin from user_roles for full org visibility
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const sa = !!roles?.some((r) => r.role === "superadmin");
+      const list = await loadAdminOrgs({ userId, isSuperadmin: sa });
+      setOrgs(list);
+      setOrgId((prev) => prev ?? list[0]?.id ?? null);
+    })();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!orgId) {
+      setAssessments(null);
+      setAssessmentId(null);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("assessments")
+        .select("id, org_id, slug, name, is_active, theme_id, title_font, body_font")
+        .eq("org_id", orgId)
+        .order("is_active", { ascending: false })
+        .order("created_at", { ascending: true });
+      if (!alive) return;
+      const list = (data ?? []) as Assessment[];
+      setAssessments(list);
+      setAssessmentId((prev) =>
+        prev && list.some((a) => a.id === prev) ? prev : list[0]?.id ?? null,
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [orgId]);
+
+  useEffect(() => {
+    if (!assessmentId) {
+      setRows([]);
+      setActiveSegments([]);
+      setRespCounts({});
+      return;
+    }
+    let alive = true;
     (async () => {
       const { data: segs } = await supabase
         .from("segments")
         .select("id,type,cue_label,is_active,sort_order")
+        .eq("assessment_id", assessmentId)
         .order("sort_order", { ascending: true });
+      if (!alive) return;
       const segList = (segs as SegmentMeta[]) ?? [];
       setActiveSegments(segList.filter((s) => s.is_active));
 
       const { data: sess } = await supabase
         .from("sessions")
         .select("id,email,linkedin_url,submitted_at")
+        .eq("assessment_id", assessmentId)
         .not("submitted_at", "is", null)
         .order("submitted_at", { ascending: false });
+      if (!alive) return;
       const sessList = (sess as SessionRow[]) ?? [];
       setRows(sessList);
 
@@ -123,6 +178,7 @@ function Dashboard({ userId }: { userId: string }) {
             "session_id",
             sessList.map((s) => s.id),
           );
+        if (!alive) return;
         const activeIds = new Set(segList.filter((s) => s.is_active).map((s) => s.id));
         const counts: Record<string, { total: number; activeCovered: number }> = {};
         for (const s of sessList) counts[s.id] = { total: 0, activeCovered: 0 };
@@ -135,9 +191,16 @@ function Dashboard({ userId }: { userId: string }) {
         }
         for (const s of sessList) counts[s.id].activeCovered = covered[s.id]?.size ?? 0;
         setRespCounts(counts);
+      } else {
+        setRespCounts({});
       }
     })();
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [assessmentId]);
+
+  void isSuperadmin;
 
   if (selected) {
     return (
