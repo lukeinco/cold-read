@@ -85,12 +85,14 @@ export const Route = createFileRoute("/app/$slug/screening")({
 type Phase = "cue" | "respond" | "upload";
 
 function Screening() {
+  const { slug } = Route.useParams();
+  const { data: org } = useSuspenseQuery(orgBySlugQueryOptions(slug));
   const { sessionId, sessionToken } = useSession();
-  const { data: segments } = useSuspenseQuery(segmentsQueryOptions);
+  const { data: segments } = useSuspenseQuery(segmentsForOrgQueryOptions(org.id));
   const mediaStream = mic.getExisting();
 
   if (!sessionId || !sessionToken || !mediaStream) {
-    return <Navigate to="/" />;
+    return <Navigate to="/app/$slug" params={{ slug }} />;
   }
 
   if (segments.length === 0) {
