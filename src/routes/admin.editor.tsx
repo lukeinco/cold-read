@@ -487,11 +487,17 @@ function EditorDashboard({
 
 function SegmentEditor({
   segment,
+  theme,
+  titleFont,
+  bodyFont,
   onSaved,
   onDeleted,
   onError,
 }: {
   segment: Segment;
+  theme: Theme | null;
+  titleFont: string;
+  bodyFont: string;
   onSaved: (s: Segment) => void;
   onDeleted: (id: string) => void;
   onError: (m: string) => void;
