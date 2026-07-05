@@ -26,6 +26,7 @@ import { Route as AppOrgSlugAssessmentSlugRouteImport } from './routes/app.$orgS
 import { Route as ApiAdminSignupRouteImport } from './routes/api/admin.signup'
 import { Route as AppOrgSlugAssessmentSlugIndexRouteImport } from './routes/app.$orgSlug.$assessmentSlug.index'
 import { Route as AppOrgSlugAssessmentSlugScreeningRouteImport } from './routes/app.$orgSlug.$assessmentSlug.screening'
+import { Route as AppOrgSlugAssessmentSlugFinishRouteImport } from './routes/app.$orgSlug.$assessmentSlug.finish'
 
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
@@ -115,6 +116,12 @@ const AppOrgSlugAssessmentSlugScreeningRoute =
     path: '/screening',
     getParentRoute: () => AppOrgSlugAssessmentSlugRoute,
   } as any)
+const AppOrgSlugAssessmentSlugFinishRoute =
+  AppOrgSlugAssessmentSlugFinishRouteImport.update({
+    id: '/finish',
+    path: '/finish',
+    getParentRoute: () => AppOrgSlugAssessmentSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
   '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
+  '/app/$orgSlug/$assessmentSlug/finish': typeof AppOrgSlugAssessmentSlugFinishRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug/': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug': typeof AppOrgSlugIndexRoute
+  '/app/$orgSlug/$assessmentSlug/finish': typeof AppOrgSlugAssessmentSlugFinishRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
   '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
+  '/app/$orgSlug/$assessmentSlug/finish': typeof AppOrgSlugAssessmentSlugFinishRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug/': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
     | '/app/$orgSlug/'
+    | '/app/$orgSlug/$assessmentSlug/finish'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/admin/signup'
     | '/app/$orgSlug'
+    | '/app/$orgSlug/$assessmentSlug/finish'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug'
   id:
@@ -228,6 +240,7 @@ export interface FileRouteTypes {
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
     | '/app/$orgSlug/'
+    | '/app/$orgSlug/$assessmentSlug/finish'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug/'
   fileRoutesById: FileRoutesById
@@ -371,16 +384,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgSlugAssessmentSlugScreeningRouteImport
       parentRoute: typeof AppOrgSlugAssessmentSlugRoute
     }
+    '/app/$orgSlug/$assessmentSlug/finish': {
+      id: '/app/$orgSlug/$assessmentSlug/finish'
+      path: '/finish'
+      fullPath: '/app/$orgSlug/$assessmentSlug/finish'
+      preLoaderRoute: typeof AppOrgSlugAssessmentSlugFinishRouteImport
+      parentRoute: typeof AppOrgSlugAssessmentSlugRoute
+    }
   }
 }
 
 interface AppOrgSlugAssessmentSlugRouteChildren {
+  AppOrgSlugAssessmentSlugFinishRoute: typeof AppOrgSlugAssessmentSlugFinishRoute
   AppOrgSlugAssessmentSlugScreeningRoute: typeof AppOrgSlugAssessmentSlugScreeningRoute
   AppOrgSlugAssessmentSlugIndexRoute: typeof AppOrgSlugAssessmentSlugIndexRoute
 }
 
 const AppOrgSlugAssessmentSlugRouteChildren: AppOrgSlugAssessmentSlugRouteChildren =
   {
+    AppOrgSlugAssessmentSlugFinishRoute: AppOrgSlugAssessmentSlugFinishRoute,
     AppOrgSlugAssessmentSlugScreeningRoute:
       AppOrgSlugAssessmentSlugScreeningRoute,
     AppOrgSlugAssessmentSlugIndexRoute: AppOrgSlugAssessmentSlugIndexRoute,
