@@ -89,16 +89,19 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          slug: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          slug: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          slug?: string
         }
         Relationships: []
       }
@@ -183,7 +186,7 @@ export type Database = {
           cue_label: string
           id: string
           is_active: boolean
-          org_id: string | null
+          org_id: string
           prompt_audio_path: string | null
           script_text: string | null
           sort_order: number
@@ -197,7 +200,7 @@ export type Database = {
           cue_label: string
           id?: string
           is_active?: boolean
-          org_id?: string | null
+          org_id: string
           prompt_audio_path?: string | null
           script_text?: string | null
           sort_order: number
@@ -211,14 +214,22 @@ export type Database = {
           cue_label?: string
           id?: string
           is_active?: boolean
-          org_id?: string | null
+          org_id?: string
           prompt_audio_path?: string | null
           script_text?: string | null
           sort_order?: number
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "segments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions: {
         Row: {
@@ -227,6 +238,7 @@ export type Database = {
           email: string | null
           id: string
           linkedin_url: string | null
+          org_id: string
           submitted_at: string | null
         }
         Insert: {
@@ -235,6 +247,7 @@ export type Database = {
           email?: string | null
           id?: string
           linkedin_url?: string | null
+          org_id: string
           submitted_at?: string | null
         }
         Update: {
@@ -243,9 +256,18 @@ export type Database = {
           email?: string | null
           id?: string
           linkedin_url?: string | null
+          org_id?: string
           submitted_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
