@@ -27,6 +27,7 @@ type SegmentType =
 type Segment = {
   id: string;
   org_id: string | null;
+  assessment_id: string;
   sort_order: number;
   type: SegmentType;
   prompt_audio_path: string | null;
