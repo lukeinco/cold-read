@@ -2,15 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
 import { useSession } from "@/context/session-context";
+import { themedAssessmentQueryOptions } from "@/lib/assessment-theme";
 
-
-export const Route = createFileRoute("/finish")({
+export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/finish")({
   head: () => ({
     meta: [
       { title: "Almost done — Cold Read" },
       { name: "robots", content: "noindex" },
     ],
   }),
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(
+      themedAssessmentQueryOptions(params.orgSlug, params.assessmentSlug),
+    ),
   component: FinishScreen,
 });
 
@@ -70,23 +74,23 @@ function FinishScreen() {
 
   if (done) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 bg-background">
-        <h1 className="font-display text-5xl md:text-7xl tracking-wide text-charcoal text-center leading-none">
-          THANKS — WE'LL BE
+      <main className="min-h-screen flex items-center justify-center px-6 a-bg">
+        <h1 className="a-font-title a-text text-5xl md:text-7xl leading-none text-center uppercase" style={{ letterSpacing: "0.02em" }}>
+          Thanks — we'll be
           <br />
-          IN TOUCH.
+          in touch.
         </h1>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-16 bg-background">
-      <div className="w-full max-w-lg">
-        <h1 className="font-display text-6xl md:text-7xl tracking-wide text-charcoal leading-none">
-          ALMOST DONE
+    <main className="min-h-screen flex items-center justify-center px-6 py-16 a-bg">
+      <div className="w-full max-w-lg a-card-bg p-10">
+        <h1 className="a-font-title a-text text-6xl md:text-7xl leading-none uppercase" style={{ letterSpacing: "0.02em" }}>
+          Almost done
         </h1>
-        <p className="mt-4 font-serif text-2xl italic text-charcoal/85">
+        <p className="mt-4 a-font-body a-text text-2xl italic" style={{ opacity: 0.85 }}>
           Where do we reach you?
         </p>
 
@@ -111,7 +115,7 @@ function FinishScreen() {
           />
 
           {error && (
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
+            <p className="a-font-body text-xs uppercase tracking-[0.2em] a-accent">
               {error}
             </p>
           )}
@@ -119,7 +123,8 @@ function FinishScreen() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full font-mono text-sm uppercase tracking-[0.28em] bg-primary text-parchment py-4 px-6 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+            className="w-full a-font-body text-sm uppercase tracking-[0.28em] a-accent-bg py-4 px-6 disabled:opacity-40 disabled:cursor-not-allowed transition-transform hover:-translate-y-0.5 disabled:hover:translate-y-0"
+            style={{ color: "var(--a-bg)" }}
           >
             {submitting ? "Submitting…" : "Submit"}
           </button>
@@ -148,7 +153,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+      <span className="a-font-body text-[11px] uppercase tracking-[0.28em] a-muted">
         {label}
       </span>
       <input
@@ -158,9 +163,10 @@ function Field({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required
-        className={`mt-2 w-full bg-transparent border-b-2 py-2 font-mono text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none transition-colors ${
-          valid ? "border-charcoal/40 focus:border-primary" : "border-primary"
-        }`}
+        className="mt-2 w-full bg-transparent border-b-2 py-2 a-font-body text-base a-text focus:outline-none transition-colors"
+        style={{
+          borderColor: valid ? "color-mix(in srgb, var(--a-muted) 60%, transparent)" : "var(--a-accent)",
+        }}
       />
     </label>
   );

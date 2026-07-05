@@ -156,3 +156,30 @@
     text-transform: uppercase;
   }
 }
+
+/* ---------------------------------------------------------------
+ * Assessment-scoped theme utilities.
+ * These read from --a-* CSS custom properties set on .a-root by the
+ * candidate-flow layout. Do NOT use these outside the candidate flow.
+ * --------------------------------------------------------------- */
+.a-root h1,
+.a-root h2,
+.a-root h3,
+.a-root h4,
+.a-root h5,
+.a-root h6 {
+  font-family: var(--a-title-font);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.a-bg { background-color: var(--a-bg); }
+.a-card-bg { background-color: var(--a-card); }
+.a-accent-bg { background-color: var(--a-accent); }
+.a-text { color: var(--a-text); }
+.a-accent { color: var(--a-accent); }
+.a-muted { color: var(--a-muted); }
+.a-border-text { border-color: var(--a-text); }
+.a-border-muted { border-color: var(--a-muted); }
+.a-border-accent { border-color: var(--a-accent); }
+.a-font-title { font-family: var(--a-title-font); }
+.a-font-body { font-family: var(--a-body-font); }
