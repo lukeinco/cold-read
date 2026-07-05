@@ -390,29 +390,60 @@ function EditorDashboard({
           </p>
         )}
 
-        {assessments && assessments.length > 0 && (
-          <div className="mt-4 flex items-center gap-3">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
-              Assessment
-            </span>
-            <select
-              value={assessmentId ?? ""}
-              onChange={(e) => setAssessmentId(e.target.value)}
-              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+        {assessments && orgId && (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {assessments.length > 0 && (
+              <>
+                <span className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+                  Assessment
+                </span>
+                <select
+                  value={assessmentId ?? ""}
+                  onChange={(e) => setAssessmentId(e.target.value)}
+                  className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-base text-charcoal focus:outline-none"
+                >
+                  {assessments.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} {a.is_active ? "" : "· archived"}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                const name = window.prompt("New assessment name?")?.trim();
+                if (!name) return;
+                const baseSlug = name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/(^-|-$)/g, "") || "assessment";
+                let slug = baseSlug;
+                let n = 2;
+                while ((assessments ?? []).some((a) => a.slug === slug)) {
+                  slug = `${baseSlug}-${n++}`;
+                }
+                const { data, error: err } = await supabase
+                  .from("assessments")
+                  .insert({ org_id: orgId, name, slug, is_active: true })
+                  .select("id, org_id, slug, name, is_active, theme_id, title_font, body_font")
+                  .single();
+                if (err) {
+                  setError(err.message);
+                  return;
+                }
+                const created = data as Assessment;
+                setAssessments((prev) => [...(prev ?? []), created]);
+                setAssessmentId(created.id);
+              }}
+              className="font-mono text-xs uppercase tracking-[0.24em] border border-charcoal/40 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary transition-colors"
             >
-              {assessments.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} {a.is_active ? "" : "· archived"}
-                </option>
-              ))}
-            </select>
+              + New assessment
+            </button>
           </div>
         )}
-        {assessments && assessments.length === 0 && orgId && (
-          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
-            No assessments in this org yet — create one from the Admin hub.
-          </p>
-        )}
+
 
         {error && (
           <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
@@ -950,37 +981,41 @@ function PromptAudioSection({
   }
 
   return (
-    <div className="border border-charcoal/20 p-4">
-      <div className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70 mb-3">
+    <div className="border border-charcoal/30 bg-juniper/40 p-5">
+      <div className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal mb-4">
         Prompt audio
       </div>
       {path ? (
         <div className="space-y-3">
           {signedUrl ? (
-            <audio controls src={signedUrl} className="w-full" />
+            <audio
+              controls
+              src={signedUrl}
+              className="w-full [color-scheme:dark] rounded-sm"
+            />
           ) : (
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50">
+            <p className="font-mono text-sm uppercase tracking-[0.24em] text-charcoal/80">
               Loading…
             </p>
           )}
-          <div className="font-mono text-[10px] text-charcoal/50 break-all">{path}</div>
+          <div className="font-mono text-xs text-charcoal/70 break-all">{path}</div>
           <button
             onClick={handleRemove}
             disabled={busy}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary hover:underline disabled:opacity-40"
+            className="font-mono text-xs uppercase tracking-[0.24em] text-primary hover:underline disabled:opacity-40"
           >
             Remove audio
           </button>
         </div>
       ) : (
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-          No audio — candidates will see the "audio pending" fallback.
+        <p className="font-mono text-sm text-charcoal/80">
+          No audio yet — candidates will see the "audio pending" fallback.
         </p>
       )}
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60 mb-2">
+          <div className="font-mono text-xs uppercase tracking-[0.24em] text-charcoal/80 mb-2">
             Upload file
           </div>
           <input
@@ -988,11 +1023,11 @@ function PromptAudioSection({
             accept="audio/*"
             onChange={handleFileUpload}
             disabled={busy}
-            className="block w-full text-sm text-charcoal file:mr-3 file:border file:border-charcoal/30 file:bg-transparent file:px-3 file:py-2 file:font-mono file:text-[11px] file:uppercase file:tracking-[0.24em] file:text-charcoal hover:file:bg-charcoal/5"
+            className="block w-full text-sm text-charcoal file:mr-3 file:border file:border-charcoal/40 file:bg-transparent file:px-3 file:py-2 file:font-mono file:text-xs file:uppercase file:tracking-[0.24em] file:text-charcoal hover:file:bg-charcoal/10 hover:file:border-charcoal"
           />
         </div>
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60 mb-2">
+          <div className="font-mono text-xs uppercase tracking-[0.24em] text-charcoal/80 mb-2">
             Record in browser
           </div>
           <BrowserRecorder
@@ -1004,6 +1039,7 @@ function PromptAudioSection({
     </div>
   );
 }
+
 
 function BrowserRecorder({
   disabled,
