@@ -1283,7 +1283,7 @@ function SegmentCard({
             )}
             <span
               className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em]"
-              style={{ color: path ? "#3D5E4A" : "#C44A18" }}
+              style={{ color: path ? "#3D5E4A" : "var(--destructive)" }}
               title={path ? "Audio attached" : "No audio"}
             >
               {path ? "♪ audio" : "no audio"}
