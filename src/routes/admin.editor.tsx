@@ -337,6 +337,30 @@ function EditorDashboard({
           </p>
         )}
 
+        {assessments && assessments.length > 0 && (
+          <div className="mt-4 flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+              Assessment
+            </span>
+            <select
+              value={assessmentId ?? ""}
+              onChange={(e) => setAssessmentId(e.target.value)}
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+            >
+              {assessments.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} {a.is_active ? "" : "· archived"}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {assessments && assessments.length === 0 && orgId && (
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-primary">
+            No assessments in this org yet — create one from the Admin hub.
+          </p>
+        )}
+
         {error && (
           <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
             {error}
