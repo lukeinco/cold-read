@@ -78,6 +78,7 @@ function EditorPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [checked, setChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -87,15 +88,18 @@ function EditorPage() {
           .from("user_roles")
           .select("role")
           .eq("user_id", data.session.user.id);
-        setIsAdmin(
-          !!roles?.some((r) => r.role === "admin" || r.role === "superadmin"),
-        );
+        const rs = roles?.map((r) => r.role) ?? [];
+        setIsSuperadmin(rs.includes("superadmin"));
+        setIsAdmin(rs.includes("admin") || rs.includes("superadmin"));
       }
       setChecked(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (!s) setIsAdmin(false);
+      if (!s) {
+        setIsAdmin(false);
+        setIsSuperadmin(false);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -120,10 +124,16 @@ function EditorPage() {
     );
   }
 
-  return <EditorDashboard />;
+  return <EditorDashboard userId={session.user.id} isSuperadmin={isSuperadmin} />;
 }
 
-function EditorDashboard() {
+function EditorDashboard({
+  userId,
+  isSuperadmin,
+}: {
+  userId: string;
+  isSuperadmin: boolean;
+}) {
   const [segments, setSegments] = useState<Segment[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
