@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { loadAdminOrgs, type Org, type Assessment } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/admin/review")({
   head: () => ({
