@@ -1210,6 +1210,7 @@ function SegmentCard({
   segment,
   selected,
   dragging,
+  activePalette,
   onSelect,
   onDragStart,
   onDrop,
@@ -1217,10 +1218,16 @@ function SegmentCard({
   segment: Segment;
   selected: boolean;
   dragging: boolean;
+  activePalette: string[];
   onSelect: () => void;
   onDragStart: () => void;
   onDrop: () => void;
 }) {
+  const overrideOutOfPalette =
+    (segment.override_card_color != null &&
+      !inPalette(segment.override_card_color, activePalette)) ||
+    (segment.override_text_color != null &&
+      !inPalette(segment.override_text_color, activePalette));
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const isAudio = segment.type === "audio";
   const path = segment.prompt_audio_path;
