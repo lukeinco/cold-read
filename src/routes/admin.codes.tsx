@@ -177,6 +177,8 @@ function CodesDashboard() {
           </button>
         </header>
 
+        <CreateOrgSection onCreated={loadOrgs} onError={setError} />
+
         <section className="mt-8 border border-charcoal/25 bg-parchment p-6">
           <h2 className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal">
             Generate invite
