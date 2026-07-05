@@ -61,6 +61,17 @@ function typeLabel(t: SegmentType): string {
   }
 }
 
+function readableOn(bg: string): string {
+  // Simple luminance check for #RRGGBB — returns parchment on dark, charcoal on light.
+  const m = /^#?([0-9a-f]{6})$/i.exec(bg.trim());
+  if (!m) return "#F5F0E8";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return l > 0.6 ? "#2B2B28" : "#F5F0E8";
+}
+
+
 function EditorPage() {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
