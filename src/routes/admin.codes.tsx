@@ -13,7 +13,7 @@ export const Route = createFileRoute("/admin/codes")({
   component: CodesPage,
 });
 
-type Org = { id: string; name: string };
+type Org = { id: string; name: string; slug: string };
 type InviteCode = {
   code: string;
   org_id: string;
