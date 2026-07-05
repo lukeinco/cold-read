@@ -836,7 +836,7 @@ function SegmentEditor({
             <button
               onClick={handleSave}
               disabled={saving || !dirty}
-              className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
+              className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-on-accent px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
             >
               {saving ? "Saving…" : "Save"}
             </button>
@@ -1172,7 +1172,7 @@ function BrowserRecorder({
             <button
               onClick={save}
               disabled={disabled}
-              className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-parchment px-3 py-2 disabled:opacity-40"
+              className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-3 py-2 disabled:opacity-40"
             >
               Save
             </button>
@@ -1407,7 +1407,7 @@ function AddSegmentMenu({ onAdd }: { onAdd: (kind: SegmentType) => void }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-4 py-3 hover:bg-iron/90 transition-colors"
+        className="w-full font-mono text-xs uppercase tracking-[0.28em] bg-iron text-on-accent px-4 py-3 hover:bg-iron/90 transition-colors"
       >
         + Add step
       </button>
