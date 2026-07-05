@@ -237,6 +237,46 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
           </div>
         </header>
 
+        <div className="mt-4 flex flex-wrap items-center gap-6">
+          {orgs && orgs.length > 1 && (
+            <label className="flex items-center gap-3">
+              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+                Org
+              </span>
+              <select
+                value={orgId ?? ""}
+                onChange={(e) => setOrgId(e.target.value)}
+                className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+              >
+                {orgs.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {assessments && assessments.length > 0 && (
+            <label className="flex items-center gap-3">
+              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+                Assessment
+              </span>
+              <select
+                value={assessmentId ?? ""}
+                onChange={(e) => setAssessmentId(e.target.value)}
+                className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+              >
+                {assessments.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} {a.is_active ? "" : "· archived"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+
+
         {rows === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
             Loading…
