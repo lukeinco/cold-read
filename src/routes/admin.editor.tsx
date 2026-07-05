@@ -335,10 +335,15 @@ function SegmentEditor({
     isActive !== initial.current.isActive;
 
   const isAudio = type === "audio";
+  const isText = type === "text";
+  const isTextEntry = type === "text_entry";
+  const hasScript = type === "scripted" || isText || isTextEntry;
+  const hasCountdown = !isAudio && !isText;
+  const hasColor = !isAudio;
 
   function handleTypeChange(next: SegmentType) {
     setType(next);
-    if (next === "improv" || next === "audio") setCountdown("");
+    if (next === "improv" || next === "audio" || next === "text") setCountdown("");
   }
 
   async function handleSave() {
@@ -354,8 +359,8 @@ function SegmentEditor({
       type,
       cue_label: cueLabel.trim() || "Untitled",
       cue_color: isAudio ? "#2B2B28" : cueColor,
-      script_text: type === "scripted" ? scriptText : null,
-      countdown_seconds: isAudio ? null : parsedCountdown,
+      script_text: hasScript ? scriptText : null,
+      countdown_seconds: hasCountdown ? parsedCountdown : null,
       is_active: isActive,
     };
     const { data, error } = await supabase
