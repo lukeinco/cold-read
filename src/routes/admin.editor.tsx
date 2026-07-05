@@ -138,11 +138,27 @@ function EditorDashboard({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadAdminOrgs({ userId, isSuperadmin })
+      .then((list) => {
+        setOrgs(list);
+        setOrgId((prev) => prev ?? list[0]?.id ?? null);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load orgs"));
+  }, [userId, isSuperadmin]);
 
   const load = useCallback(async () => {
+    if (!orgId) {
+      setSegments([]);
+      return;
+    }
     const { data, error } = await supabase
       .from("segments")
       .select("*")
+      .eq("org_id", orgId)
       .order("sort_order", { ascending: true });
     if (error) {
       setError(error.message);
@@ -150,14 +166,17 @@ function EditorDashboard({
     }
     const list = (data as Segment[]) ?? [];
     setSegments(list);
-    setSelectedId((prev) => prev ?? list[0]?.id ?? null);
-  }, []);
+    setSelectedId((prev) =>
+      prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
+    );
+  }, [orgId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function handleAdd(kind: SegmentType) {
+    if (!orgId) return;
     const nextOrder =
       (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1;
     const defaults: Partial<Segment> = (() => {
@@ -175,6 +194,7 @@ function EditorDashboard({
     const { data, error } = await supabase
       .from("segments")
       .insert({
+        org_id: orgId,
         sort_order: nextOrder,
         type: kind,
         cue_color: defaults.cue_color!,
@@ -191,6 +211,7 @@ function EditorDashboard({
     setSegments((prev) => [...(prev ?? []), created]);
     setSelectedId(created.id);
   }
+
 
   async function handleDropReorder(targetId: string) {
     if (!dragId || !segments || dragId === targetId) {
