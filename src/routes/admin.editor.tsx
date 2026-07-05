@@ -278,11 +278,36 @@ function EditorDashboard({
           </div>
         </header>
 
+        {orgs && orgs.length > 1 && (
+          <div className="mt-4 flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal/70">
+              Org
+            </span>
+            <select
+              value={orgId ?? ""}
+              onChange={(e) => setOrgId(e.target.value)}
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-sm text-charcoal focus:outline-none"
+            >
+              {orgs.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {orgs && orgs.length === 1 && (
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+            Editing {orgs[0].name}
+          </p>
+        )}
+
         {error && (
           <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-primary">
             {error}
           </p>
         )}
+
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8">
           <aside className="border border-charcoal/25 bg-parchment">
