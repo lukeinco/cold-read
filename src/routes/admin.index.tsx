@@ -298,7 +298,7 @@ function OrgAssessmentsBlock({
           <button
             onClick={() => void handleCreate()}
             disabled={!newName.trim()}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-parchment px-4 py-2 disabled:opacity-40"
+            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-4 py-2 disabled:opacity-40"
           >
             Create
           </button>
@@ -495,7 +495,7 @@ function AssessmentRow({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleCopy}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-parchment px-3 py-2 hover:bg-iron/90"
+            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-3 py-2 hover:bg-iron/90"
           >
             {copied ? "Copied ✓" : "Copy link"}
           </button>
@@ -552,7 +552,7 @@ function ScreeningLinkRow({
       </div>
       <button
         onClick={handleCopy}
-        className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-parchment px-4 py-2 hover:bg-iron/90 transition-colors"
+        className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-4 py-2 hover:bg-iron/90 transition-colors"
       >
         {copied ? "Copied ✓" : "Copy"}
       </button>

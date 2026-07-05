@@ -562,7 +562,7 @@ function Builder({
               <button
                 onClick={onSave}
                 disabled={saving}
-                className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-parchment px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
+                className="font-mono text-xs uppercase tracking-[0.28em] bg-iron text-on-accent px-6 py-3 disabled:opacity-40 hover:bg-iron/90 transition-colors"
               >
                 {saving ? "Saving…" : editing ? "Save changes" : "Create theme"}
               </button>
