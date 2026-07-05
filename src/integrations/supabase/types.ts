@@ -59,6 +59,13 @@ export type Database = {
             referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessments_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       invite_codes: {
@@ -235,6 +242,8 @@ export type Database = {
           id: string
           is_active: boolean
           org_id: string
+          override_card_color: string | null
+          override_text_color: string | null
           prompt_audio_path: string | null
           script_text: string | null
           sort_order: number
@@ -250,6 +259,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           org_id: string
+          override_card_color?: string | null
+          override_text_color?: string | null
           prompt_audio_path?: string | null
           script_text?: string | null
           sort_order: number
@@ -265,6 +276,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           org_id?: string
+          override_card_color?: string | null
+          override_text_color?: string | null
           prompt_audio_path?: string | null
           script_text?: string | null
           sort_order?: number
@@ -335,6 +348,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      themes: {
+        Row: {
+          accent_color: string | null
+          bg_color: string | null
+          card_color: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_preset: boolean
+          muted_color: string | null
+          name: string
+          text_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          bg_color?: string | null
+          card_color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_preset?: boolean
+          muted_color?: string | null
+          name: string
+          text_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          bg_color?: string | null
+          card_color?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_preset?: boolean
+          muted_color?: string | null
+          name?: string
+          text_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
