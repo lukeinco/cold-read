@@ -40,7 +40,7 @@ export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
     return () => {
       alive = false;
     };
-  }, [orgId]);
+  }, []);
 
   const activeTheme = useMemo(
     () => themes?.find((t) => t.id === assessment.theme_id) ?? null,
