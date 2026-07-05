@@ -20,6 +20,7 @@ import { Route as AdminReviewRouteImport } from './routes/admin.review'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminEditorRouteImport } from './routes/admin.editor'
 import { Route as AdminCodesRouteImport } from './routes/admin.codes'
+import { Route as AppOrgSlugIndexRouteImport } from './routes/app.$orgSlug.index'
 import { Route as AppOrgSlugAssessmentSlugRouteImport } from './routes/app.$orgSlug.$assessmentSlug'
 import { Route as ApiAdminSignupRouteImport } from './routes/api/admin.signup'
 import { Route as AppOrgSlugAssessmentSlugIndexRouteImport } from './routes/app.$orgSlug.$assessmentSlug.index'
@@ -80,6 +81,11 @@ const AdminCodesRoute = AdminCodesRouteImport.update({
   path: '/admin/codes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppOrgSlugIndexRoute = AppOrgSlugIndexRouteImport.update({
+  id: '/app/$orgSlug/',
+  path: '/app/$orgSlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppOrgSlugAssessmentSlugRoute =
   AppOrgSlugAssessmentSlugRouteImport.update({
     id: '/app/$orgSlug/$assessmentSlug',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
+  '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug/': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
+  '/app/$orgSlug': typeof AppOrgSlugIndexRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
+  '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
   '/app/$orgSlug/$assessmentSlug/screening': typeof AppOrgSlugAssessmentSlugScreeningRoute
   '/app/$orgSlug/$assessmentSlug/': typeof AppOrgSlugAssessmentSlugIndexRoute
 }
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
+    | '/app/$orgSlug/'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/api/submit-session'
     | '/admin'
     | '/api/admin/signup'
+    | '/app/$orgSlug'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug'
   id:
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
+    | '/app/$orgSlug/'
     | '/app/$orgSlug/$assessmentSlug/screening'
     | '/app/$orgSlug/$assessmentSlug/'
   fileRoutesById: FileRoutesById
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAdminSignupRoute: typeof ApiAdminSignupRoute
   AppOrgSlugAssessmentSlugRoute: typeof AppOrgSlugAssessmentSlugRouteWithChildren
+  AppOrgSlugIndexRoute: typeof AppOrgSlugIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCodesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/$orgSlug/': {
+      id: '/app/$orgSlug/'
+      path: '/app/$orgSlug'
+      fullPath: '/app/$orgSlug/'
+      preLoaderRoute: typeof AppOrgSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/$orgSlug/$assessmentSlug': {
       id: '/app/$orgSlug/$assessmentSlug'
       path: '/app/$orgSlug/$assessmentSlug'
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiAdminSignupRoute: ApiAdminSignupRoute,
   AppOrgSlugAssessmentSlugRoute: AppOrgSlugAssessmentSlugRouteWithChildren,
+  AppOrgSlugIndexRoute: AppOrgSlugIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
