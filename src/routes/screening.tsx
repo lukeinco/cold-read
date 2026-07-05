@@ -124,13 +124,17 @@ function Player({
   const segment = segments[index];
   const isLast = index === segments.length - 1;
 
+  // Non-response steps: audio, text. Response steps: warmup/question/scripted/improv/text_entry.
+  const isResponseStep = (t: SegmentType) =>
+    t !== "audio" && t !== "text";
+
   // Progress counts response steps only.
   const responseSteps = useMemo(
-    () => segments.filter((s) => s.type !== "audio"),
+    () => segments.filter((s) => isResponseStep(s.type)),
     [segments],
   );
   const responseIndex = useMemo(() => {
-    if (segment.type === "audio") return -1;
+    if (!isResponseStep(segment.type)) return -1;
     return responseSteps.findIndex((s) => s.id === segment.id);
   }, [segment, responseSteps]);
 
@@ -148,6 +152,37 @@ function Player({
     return (
       <main className="min-h-screen relative">
         <AudioCallPhase key={`audio-${segment.id}`} segment={segment} onDone={advanceSegment} />
+      </main>
+    );
+  }
+
+  // Text slide: display only, no response saved.
+  if (segment.type === "text") {
+    return (
+      <main className="min-h-screen relative">
+        <TextSlidePhase key={`text-${segment.id}`} segment={segment} onDone={advanceSegment} />
+      </main>
+    );
+  }
+
+  // Text entry: candidate types response.
+  if (segment.type === "text_entry") {
+    return (
+      <main className="min-h-screen relative">
+        {responseIndex >= 0 && (
+          <div className="pointer-events-none absolute right-6 top-6 z-40 font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+            {String(responseIndex + 1).padStart(2, "0")} /{" "}
+            {String(responseSteps.length).padStart(2, "0")}
+          </div>
+        )}
+        <TextEntryPhase
+          key={`text-entry-${segment.id}`}
+          sessionId={sessionId}
+          sessionToken={sessionToken}
+          segment={segment}
+          sortOrder={index}
+          onDone={advanceSegment}
+        />
       </main>
     );
   }
