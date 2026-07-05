@@ -392,33 +392,25 @@ function EditorDashboard({
 
         {assessments && orgId && (
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {assessments.length > 0 && (
-              <>
-                <span className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
-                  Assessment
-                </span>
-                <select
-                  value={assessmentId ?? ""}
-                  onChange={(e) => setAssessmentId(e.target.value)}
-                  className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-base text-charcoal focus:outline-none"
-                >
-                  {assessments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} {a.is_active ? "" : "· archived"}
-                    </option>
-                  ))}
-                </select>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={async () => {
+            <span className="font-mono text-xs uppercase tracking-[0.28em] text-charcoal/80">
+              Assessment
+            </span>
+            <select
+              value={assessmentId ?? ""}
+              onChange={async (e) => {
+                if (e.target.value !== "__new__") {
+                  setAssessmentId(e.target.value);
+                  return;
+                }
                 const name = window.prompt("New assessment name?")?.trim();
+                // Reset select to previous value before doing async work
+                e.target.value = assessmentId ?? "";
                 if (!name) return;
-                const baseSlug = name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, "-")
-                  .replace(/(^-|-$)/g, "") || "assessment";
+                const baseSlug =
+                  name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/(^-|-$)/g, "") || "assessment";
                 let slug = baseSlug;
                 let n = 2;
                 while ((assessments ?? []).some((a) => a.slug === slug)) {
@@ -437,12 +429,24 @@ function EditorDashboard({
                 setAssessments((prev) => [...(prev ?? []), created]);
                 setAssessmentId(created.id);
               }}
-              className="font-mono text-xs uppercase tracking-[0.24em] border border-charcoal/40 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary transition-colors"
+              className="bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-1 pr-6 font-mono text-base text-charcoal focus:outline-none"
             >
-              + New assessment
-            </button>
+              {assessments.length === 0 && (
+                <option value="" disabled>
+                  No assessments yet
+                </option>
+              )}
+              {assessments.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} {a.is_active ? "" : "· archived"}
+                </option>
+              ))}
+              <option value="__new__">+ New assessment…</option>
+            </select>
           </div>
         )}
+
+
 
 
         {error && (
