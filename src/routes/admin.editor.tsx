@@ -568,6 +568,8 @@ function SegmentEditor({
       script_text: hasScript ? scriptText : null,
       countdown_seconds: hasCountdown ? parsedCountdown : null,
       is_active: isActive,
+      override_card_color: overrideCard,
+      override_text_color: overrideText,
     };
     const { data, error } = await supabase
       .from("segments")
@@ -589,6 +591,8 @@ function SegmentEditor({
       countdown:
         updated.countdown_seconds != null ? String(updated.countdown_seconds) : "",
       isActive: updated.is_active,
+      overrideCard: updated.override_card_color,
+      overrideText: updated.override_text_color,
     };
     onSaved(updated);
   }
