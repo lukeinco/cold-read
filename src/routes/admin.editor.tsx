@@ -510,6 +510,12 @@ function SegmentEditor({
     segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
   );
   const [isActive, setIsActive] = useState(segment.is_active);
+  const [overrideCard, setOverrideCard] = useState<string | null>(
+    segment.override_card_color,
+  );
+  const [overrideText, setOverrideText] = useState<string | null>(
+    segment.override_text_color,
+  );
   const [saving, setSaving] = useState(false);
 
   const initial = useRef({
@@ -520,6 +526,8 @@ function SegmentEditor({
     countdown:
       segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
     isActive: segment.is_active,
+    overrideCard: segment.override_card_color,
+    overrideText: segment.override_text_color,
   });
 
   const dirty =
@@ -528,7 +536,9 @@ function SegmentEditor({
     cueColor !== initial.current.cueColor ||
     scriptText !== initial.current.scriptText ||
     countdown !== initial.current.countdown ||
-    isActive !== initial.current.isActive;
+    isActive !== initial.current.isActive ||
+    overrideCard !== initial.current.overrideCard ||
+    overrideText !== initial.current.overrideText;
 
   const isAudio = type === "audio";
   const isText = type === "text";
