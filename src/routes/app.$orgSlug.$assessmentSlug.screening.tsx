@@ -60,10 +60,12 @@ export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/screening")(
     ],
   }),
   loader: async ({ context, params }) => {
-    const org = await context.queryClient.ensureQueryData(
-      orgBySlugQueryOptions(params.slug),
+    const { assessment } = await context.queryClient.ensureQueryData(
+      assessmentBySlugsQueryOptions(params.orgSlug, params.assessmentSlug),
     );
-    await context.queryClient.ensureQueryData(segmentsForOrgQueryOptions(org.id));
+    await context.queryClient.ensureQueryData(
+      segmentsForAssessmentQueryOptions(assessment.id),
+    );
   },
   component: Screening,
   errorComponent: ({ error }) => (
@@ -85,14 +87,18 @@ export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/screening")(
 type Phase = "cue" | "respond" | "upload";
 
 function Screening() {
-  const { slug } = Route.useParams();
-  const { data: org } = useSuspenseQuery(orgBySlugQueryOptions(slug));
+  const { orgSlug, assessmentSlug } = Route.useParams();
+  const { data } = useSuspenseQuery(
+    assessmentBySlugsQueryOptions(orgSlug, assessmentSlug),
+  );
   const { sessionId, sessionToken } = useSession();
-  const { data: segments } = useSuspenseQuery(segmentsForOrgQueryOptions(org.id));
+  const { data: segments } = useSuspenseQuery(
+    segmentsForAssessmentQueryOptions(data.assessment.id),
+  );
   const mediaStream = mic.getExisting();
 
   if (!sessionId || !sessionToken || !mediaStream) {
-    return <Navigate to="/app/$slug" params={{ slug }} />;
+    return <Navigate to="/app/$orgSlug/$assessmentSlug" params={{ orgSlug, assessmentSlug }} />;
   }
 
   if (segments.length === 0) {
