@@ -367,6 +367,20 @@ function readableOn(bg: string): string {
 
 function TextSlidePhase({ segment, onDone }: { segment: Segment; onDone: () => void }) {
   const fg = readableOn(segment.cueColor);
+  const doneRef = useRef(false);
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onDone();
+  }, [onDone]);
+
+  useEffect(() => {
+    const cap = segment.countdownSeconds;
+    if (cap == null || cap <= 0) return;
+    const id = window.setTimeout(() => finish(), cap * 1000);
+    return () => window.clearTimeout(id);
+  }, [segment.countdownSeconds, finish]);
+
   return (
     <section
       className="min-h-screen flex flex-col items-center justify-center px-8 py-16 text-center"
@@ -387,7 +401,7 @@ function TextSlidePhase({ segment, onDone }: { segment: Segment; onDone: () => v
         </p>
       )}
       <button
-        onClick={onDone}
+        onClick={finish}
         className="mt-14 inline-flex items-center gap-3 border-2 px-8 py-4 font-mono text-sm uppercase tracking-[0.28em] transition-transform hover:-translate-y-0.5"
         style={{ borderColor: fg, color: fg }}
       >
