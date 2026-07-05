@@ -459,6 +459,9 @@ function EditorDashboard({
               <SegmentEditor
                 key={selected.id}
                 segment={selected}
+                theme={activeTheme}
+                titleFont={currentAssessment?.title_font ?? DEFAULT_TITLE_FONT}
+                bodyFont={currentAssessment?.body_font ?? DEFAULT_BODY_FONT}
                 onSaved={onSegmentSaved}
                 onDeleted={onSegmentDeleted}
                 onError={setError}
@@ -470,7 +473,14 @@ function EditorDashboard({
             )}
           </section>
         </div>
+        </div>
       </div>
+      {currentAssessment && (
+        <PresentationPanel
+          assessment={currentAssessment}
+          onAssessmentChange={handleAssessmentChange}
+        />
+      )}
     </main>
   );
 }
