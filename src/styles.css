@@ -82,68 +82,75 @@
 :root {
   --radius: 0px;
 
-  /* Brand tokens (oklch equivalents of the hex palette) */
-  --iron: oklch(0.55 0.15 39);        /* #C44A18 */
-  --juniper: oklch(0.44 0.05 156);    /* #3D5E4A */
-  --parchment: oklch(0.95 0.015 85);  /* #F5F0E8 */
-  --charcoal: oklch(0.22 0.005 90);   /* #2B2B28 */
+  /*
+   * Brand tokens — Cannery Dusk.
+   * Historical names kept for zero-refactor compatibility; the values are
+   * remapped to the new palette so the site chrome rebrands wholesale.
+   */
+  --parchment: #0C1A22;                    /* harbor — page ground */
+  --juniper:   #1B3A32;                    /* wet fir — surfaces / cards */
+  --fog-fir:   #2A4A40;                    /* borders / dividers */
+  --charcoal:  #EDF2EE;                    /* sea salt — primary text */
+  --drift:     #9DB0B2;                    /* muted / secondary text */
+  --iron:      #E8B84B;                    /* dock-lamp amber — accent */
+  --on-accent: #241B04;                    /* pitch — text on amber fills */
 
-  /* Semantic mapping */
+  /* Semantic mapping (shadcn / tailwind theme) */
   --background: var(--parchment);
   --foreground: var(--charcoal);
-  --card: var(--parchment);
+  --card: var(--juniper);
   --card-foreground: var(--charcoal);
-  --popover: var(--parchment);
+  --popover: var(--juniper);
   --popover-foreground: var(--charcoal);
   --primary: var(--iron);
-  --primary-foreground: var(--parchment);
+  --primary-foreground: var(--on-accent);
   --secondary: var(--juniper);
-  --secondary-foreground: var(--parchment);
-  --muted: oklch(0.92 0.015 85);
-  --muted-foreground: oklch(0.42 0.01 90);
+  --secondary-foreground: var(--charcoal);
+  --muted: var(--juniper);
+  --muted-foreground: var(--drift);
   --accent: var(--iron);
-  --accent-foreground: var(--parchment);
-  --destructive: oklch(0.55 0.22 27);
-  --destructive-foreground: var(--parchment);
-  --border: oklch(0.85 0.02 85);
-  --input: oklch(0.88 0.015 85);
+  --accent-foreground: var(--on-accent);
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: var(--charcoal);
+  --border: var(--fog-fir);
+  --input: var(--fog-fir);
   --ring: var(--iron);
 
   --chart-1: var(--iron);
-  --chart-2: var(--juniper);
+  --chart-2: var(--drift);
   --chart-3: var(--charcoal);
   --chart-4: oklch(0.75 0.1 60);
   --chart-5: oklch(0.6 0.08 200);
 
-  --sidebar: var(--parchment);
+  --sidebar: var(--juniper);
   --sidebar-foreground: var(--charcoal);
   --sidebar-primary: var(--iron);
-  --sidebar-primary-foreground: var(--parchment);
-  --sidebar-accent: var(--juniper);
-  --sidebar-accent-foreground: var(--parchment);
-  --sidebar-border: oklch(0.85 0.02 85);
+  --sidebar-primary-foreground: var(--on-accent);
+  --sidebar-accent: var(--fog-fir);
+  --sidebar-accent-foreground: var(--charcoal);
+  --sidebar-border: var(--fog-fir);
   --sidebar-ring: var(--iron);
 }
 
 .dark {
-  --background: var(--charcoal);
-  --foreground: var(--parchment);
-  --card: oklch(0.26 0.005 90);
-  --card-foreground: var(--parchment);
-  --popover: oklch(0.26 0.005 90);
-  --popover-foreground: var(--parchment);
+  --background: var(--parchment);
+  --foreground: var(--charcoal);
+  --card: var(--juniper);
+  --card-foreground: var(--charcoal);
+  --popover: var(--juniper);
+  --popover-foreground: var(--charcoal);
   --primary: var(--iron);
-  --primary-foreground: var(--parchment);
+  --primary-foreground: var(--on-accent);
   --secondary: var(--juniper);
-  --secondary-foreground: var(--parchment);
-  --muted: oklch(0.3 0.01 90);
-  --muted-foreground: oklch(0.75 0.02 85);
+  --secondary-foreground: var(--charcoal);
+  --muted: var(--juniper);
+  --muted-foreground: var(--drift);
   --accent: var(--iron);
-  --accent-foreground: var(--parchment);
+  --accent-foreground: var(--on-accent);
   --destructive: oklch(0.65 0.22 27);
-  --destructive-foreground: var(--parchment);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
+  --destructive-foreground: var(--charcoal);
+  --border: var(--fog-fir);
+  --input: var(--fog-fir);
   --ring: var(--iron);
 }
 
