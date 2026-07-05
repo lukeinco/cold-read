@@ -561,9 +561,13 @@ function SegmentEditor({
               className="w-32 bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-mono text-sm text-charcoal focus:outline-none"
             />
             <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-              {isTextEntry
-                ? "Optional writing timer — leave empty for no timer."
-                : "Leave empty for no timer — improv should be empty."}
+              {isAudio
+                ? "Optional cap — auto-advances after this many seconds even if audio is still playing."
+                : isText
+                  ? "Optional auto-advance — leave empty to require Continue tap."
+                  : isTextEntry
+                    ? "Optional writing timer — leave empty for no timer."
+                    : "Leave empty for no timer — improv should be empty."}
             </p>
           </Field>
         )}
