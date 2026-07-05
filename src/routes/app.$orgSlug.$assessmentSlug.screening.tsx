@@ -26,16 +26,16 @@ export interface Segment {
   cueLabel: string;
 }
 
-function segmentsForOrgQueryOptions(orgId: string) {
+function segmentsForAssessmentQueryOptions(assessmentId: string) {
   return queryOptions({
-    queryKey: ["segments", "active", "org", orgId],
+    queryKey: ["segments", "active", "assessment", assessmentId],
     queryFn: async (): Promise<Segment[]> => {
       const { data, error } = await supabase
         .from("segments")
         .select(
           "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label",
         )
-        .eq("org_id", orgId)
+        .eq("assessment_id", assessmentId)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
