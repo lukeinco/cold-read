@@ -838,6 +838,8 @@ function SegmentEditor({
             scriptText={scriptText}
             overrideCard={overrideCard}
             overrideText={overrideText}
+            isTextEntry={isTextEntry}
+            entryFields={entryFields}
           />
         )}
 
