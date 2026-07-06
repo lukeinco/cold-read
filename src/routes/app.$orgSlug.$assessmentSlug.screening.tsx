@@ -16,6 +16,11 @@ export type SegmentType =
   | "scripted"
   | "improv";
 
+export interface EntryField {
+  id: string;
+  label: string;
+}
+
 export interface Segment {
   id: string;
   type: SegmentType;
@@ -26,6 +31,7 @@ export interface Segment {
   cueLabel: string;
   overrideCardColor: string | null;
   overrideTextColor: string | null;
+  entryFields: EntryField[];
 }
 
 function segmentsForAssessmentQueryOptions(assessmentId: string) {
@@ -35,23 +41,36 @@ function segmentsForAssessmentQueryOptions(assessmentId: string) {
       const { data, error } = await supabase
         .from("segments")
         .select(
-          "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label, override_card_color, override_text_color",
+          "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label, override_card_color, override_text_color, entry_fields",
         )
         .eq("assessment_id", assessmentId)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((r) => ({
-        id: r.id as string,
-        type: r.type as SegmentType,
-        promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
-        scriptText: (r.script_text as string | null) ?? null,
-        countdownSeconds: (r.countdown_seconds as number | null) ?? null,
-        cueColor: r.cue_color as string,
-        cueLabel: r.cue_label as string,
-        overrideCardColor: (r.override_card_color as string | null) ?? null,
-        overrideTextColor: (r.override_text_color as string | null) ?? null,
-      }));
+      return (data ?? []).map((r) => {
+        const rawFields = Array.isArray(r.entry_fields) ? r.entry_fields : [];
+        const entryFields: EntryField[] = rawFields
+          .filter(
+            (f): f is { id: string; label: string } =>
+              !!f &&
+              typeof f === "object" &&
+              typeof (f as { id?: unknown }).id === "string" &&
+              typeof (f as { label?: unknown }).label === "string",
+          )
+          .map((f) => ({ id: f.id, label: f.label }));
+        return {
+          id: r.id as string,
+          type: r.type as SegmentType,
+          promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
+          scriptText: (r.script_text as string | null) ?? null,
+          countdownSeconds: (r.countdown_seconds as number | null) ?? null,
+          cueColor: r.cue_color as string,
+          cueLabel: r.cue_label as string,
+          overrideCardColor: (r.override_card_color as string | null) ?? null,
+          overrideTextColor: (r.override_text_color as string | null) ?? null,
+          entryFields,
+        };
+      });
     },
   });
 }
