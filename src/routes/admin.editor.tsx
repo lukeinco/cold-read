@@ -37,6 +37,8 @@ type SegmentType =
   | "scripted"
   | "improv";
 
+type EntryField = { id: string; label: string };
+
 type Segment = {
   id: string;
   org_id: string | null;
@@ -51,6 +53,7 @@ type Segment = {
   cue_label: string;
   override_card_color: string | null;
   override_text_color: string | null;
+  entry_fields: EntryField[];
   created_at: string;
   updated_at: string;
 };
