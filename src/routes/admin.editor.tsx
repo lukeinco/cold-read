@@ -282,7 +282,7 @@ function EditorDashboard({
         type: kind,
         cue_color: defaults.cue_color!,
         cue_label: defaults.cue_label!,
-        is_active: false,
+        is_active: true,
       })
       .select("*")
       .single();
