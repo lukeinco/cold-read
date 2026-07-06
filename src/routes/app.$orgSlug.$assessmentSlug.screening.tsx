@@ -163,7 +163,7 @@ function Player({
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("cue");
+ const [phase, setPhase] = useState<Phase>(segment.type === "improv" ? "cue" : "respond");
 
   const segment = segments[index];
   const isLast = index === segments.length - 1;
@@ -186,8 +186,11 @@ function Player({
         params: { orgSlug, assessmentSlug },
       });
     } else {
-      setIndex((i) => i + 1);
-      setPhase("cue");
+setIndex((i) => {
+        const next = i + 1;
+        setPhase(segments[next]?.type === "improv" ? "cue" : "respond");
+        return next;
+      });
     }
   }, [isLast, navigate, orgSlug, assessmentSlug]);
 
