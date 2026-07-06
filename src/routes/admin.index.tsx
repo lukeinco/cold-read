@@ -146,65 +146,30 @@ function AdminHub() {
         )}
 
         <div className="mt-8">
-          <Tabs defaultValue="assessments">
-            <TabsList>
-              <TabsTrigger value="assessments">Assessments</TabsTrigger>
-              <TabsTrigger value="links">Screening links</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="assessments" className="mt-6">
-              {data === null ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  Loading…
-                </p>
-              ) : data.length === 0 ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  No orgs yet.
-                </p>
-              ) : (
-                <div className="space-y-8">
-                  {data.map((row) => (
-                    <OrgAssessmentsBlock
-                      key={row.org.id}
-                      org={row.org}
-                      assessments={row.assessments}
-                      counts={row.counts}
-                      onChange={refresh}
-                      onError={setError}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="links" className="mt-6">
-              {data === null ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  Loading…
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {data.flatMap((row) =>
-                    row.assessments
-                      .filter((a) => a.is_active)
-                      .map((a) => (
-                        <ScreeningLinkRow
-                          key={a.id}
-                          org={row.org}
-                          assessment={a}
-                        />
-                      )),
-                  )}
-                  {data.every((r) => r.assessments.filter((a) => a.is_active).length === 0) && (
-                    <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                      No active assessments yet.
-                    </p>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {data === null ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+              Loading…
+            </p>
+          ) : data.length === 0 ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+              No orgs yet.
+            </p>
+          ) : (
+            <div className="space-y-8">
+              {data.map((row) => (
+                <OrgAssessmentsBlock
+                  key={row.org.id}
+                  org={row.org}
+                  assessments={row.assessments}
+                  counts={row.counts}
+                  onChange={refresh}
+                  onError={setError}
+                />
+              ))}
+            </div>
+          )}
         </div>
+
 
         <ul className="mt-12 divide-y divide-charcoal/15 border-y border-charcoal/15">
           {links.map((l) => (
