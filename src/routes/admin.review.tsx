@@ -158,11 +158,11 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
     (async () => {
       const { data: segs } = await supabase
         .from("segments")
-        .select("id,type,cue_label,is_active,sort_order")
+        .select("id,type,cue_label,is_active,sort_order,entry_fields")
         .eq("assessment_id", assessmentId)
         .order("sort_order", { ascending: true });
       if (!alive) return;
-      const segList = (segs as SegmentMeta[]) ?? [];
+      const segList = ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta);
       setActiveSegments(segList.filter((s) => s.is_active));
 
       const { data: sess } = await supabase
@@ -365,20 +365,33 @@ function Detail({
     (async () => {
       const { data } = await supabase
         .from("responses")
-        .select("id,segment_id,sort_order,storage_path")
+        .select("id,segment_id,sort_order,storage_path,response_type,text_value")
         .eq("session_id", session.id)
         .order("sort_order", { ascending: true });
-      const rows = (data as ResponseRow[]) ?? [];
+      const rows = ((data as Record<string, unknown>[]) ?? []).map((r) => ({
+        id: r.id as string,
+        segment_id: r.segment_id as string,
+        sort_order: r.sort_order as number,
+        storage_path: (r.storage_path as string | null) ?? null,
+        response_type: ((r.response_type as string) === "text" ? "text" : "audio") as
+          | "audio"
+          | "text",
+        text_value:
+          r.text_value && typeof r.text_value === "object" && !Array.isArray(r.text_value)
+            ? (r.text_value as Record<string, string>)
+            : null,
+      }));
       setResponses(rows);
 
       const segIds = Array.from(new Set(rows.map((r) => r.segment_id)));
       if (segIds.length) {
         const { data: segs } = await supabase
           .from("segments")
-          .select("id,type,cue_label,is_active,sort_order")
+          .select("id,type,cue_label,is_active,sort_order,entry_fields")
           .in("id", segIds);
         const map: Record<string, SegmentMeta> = {};
-        for (const s of (segs as SegmentMeta[] | null) ?? []) map[s.id] = s;
+        for (const s of ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta))
+          map[s.id] = s;
         setSegments(map);
       }
 
@@ -394,12 +407,15 @@ function Detail({
         setReviews(revMap);
       }
 
+      const audioRows = rows.filter(
+        (r) => r.response_type === "audio" && r.storage_path,
+      );
       const signed: Record<string, string> = {};
       await Promise.all(
-        rows.map(async (r) => {
+        audioRows.map(async (r) => {
           const { data: s } = await supabase.storage
             .from("recordings")
-            .createSignedUrl(r.storage_path, 60 * 60);
+            .createSignedUrl(r.storage_path as string, 60 * 60);
           if (s?.signedUrl) signed[r.id] = s.signedUrl;
         }),
       );
