@@ -635,7 +635,7 @@ function SegmentEditor({
       onError(error.message);
       return;
     }
-    const updated = data as Segment;
+    const updated = normalizeSegment(data as Record<string, unknown>);
     initial.current = {
       type: updated.type,
       cueLabel: updated.cue_label,
@@ -954,7 +954,7 @@ function PromptAudioSection({
     if (segment.prompt_audio_path && segment.prompt_audio_path !== newPath) {
       await supabase.storage.from("prompts").remove([segment.prompt_audio_path]);
     }
-    onSaved(data as Segment);
+    onSaved(normalizeSegment(data as Record<string, unknown>));
   }
 
   async function uploadBlob(blob: Blob, ext: string) {
@@ -998,7 +998,7 @@ function PromptAudioSection({
       onError(error.message);
       return;
     }
-    onSaved(data as Segment);
+    onSaved(normalizeSegment(data as Record<string, unknown>));
   }
 
   return (
