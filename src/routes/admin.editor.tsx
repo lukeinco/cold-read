@@ -1669,76 +1669,54 @@ function EntryFieldsEditor({
   value: EntryField[];
   onChange: (next: EntryField[]) => void;
 }) {
+  function newId() {
+    return typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `f_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+  useEffect(() => {
+    if (value.length === 0) onChange([{ id: newId(), label: "" }]);
+  }, [value, onChange]);
+
   function updateAt(idx: number, label: string) {
     onChange(value.map((f, i) => (i === idx ? { ...f, label } : f)));
   }
   function removeAt(idx: number) {
+    if (value.length <= 1) return;
     onChange(value.filter((_, i) => i !== idx));
   }
-  function move(idx: number, dir: -1 | 1) {
-    const j = idx + dir;
-    if (j < 0 || j >= value.length) return;
-    const next = [...value];
-    [next[idx], next[j]] = [next[j], next[idx]];
-    onChange(next);
-  }
   function add() {
-    const id =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `f_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    onChange([...value, { id, label: "" }]);
+    onChange([...value, { id: newId(), label: "" }]);
   }
 
   return (
     <div className="space-y-2">
-      {value.length === 0 ? (
-        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
-          No fields yet.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {value.map((f, idx) => (
-            <li
-              key={f.id}
-              className="flex items-center gap-2 border border-charcoal/25 bg-parchment px-3 py-2"
+      <ul className="space-y-2">
+        {value.map((f, idx) => (
+          <li
+            key={f.id}
+            className="flex items-center gap-2 border border-charcoal/25 bg-parchment px-3 py-2"
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50 w-6 tabular-nums">
+              {String(idx + 1).padStart(2, "0")}
+            </span>
+            <input
+              value={f.label}
+              onChange={(e) => updateAt(idx, e.target.value)}
+              placeholder="Field label (e.g. Name)"
+              maxLength={128}
+              className="flex-1 bg-transparent border-b border-charcoal/25 focus:border-primary py-1 font-serif text-base text-charcoal focus:outline-none"
+            />
+            <button
+              onClick={() => removeAt(idx)}
+              disabled={value.length <= 1}
+              className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary hover:underline px-1 disabled:opacity-30 disabled:hover:no-underline"
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50 w-6 tabular-nums">
-                {String(idx + 1).padStart(2, "0")}
-              </span>
-              <input
-                value={f.label}
-                onChange={(e) => updateAt(idx, e.target.value)}
-                placeholder="Field label (e.g. Name)"
-                maxLength={128}
-                className="flex-1 bg-transparent border-b border-charcoal/25 focus:border-primary py-1 font-serif text-base text-charcoal focus:outline-none"
-              />
-              <button
-                onClick={() => move(idx, -1)}
-                disabled={idx === 0}
-                className="font-mono text-xs text-charcoal/60 disabled:opacity-30 hover:text-primary px-1"
-                aria-label="Move up"
-              >
-                ↑
-              </button>
-              <button
-                onClick={() => move(idx, 1)}
-                disabled={idx === value.length - 1}
-                className="font-mono text-xs text-charcoal/60 disabled:opacity-30 hover:text-primary px-1"
-                aria-label="Move down"
-              >
-                ↓
-              </button>
-              <button
-                onClick={() => removeAt(idx)}
-                className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary hover:underline px-1"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
       <button
         onClick={add}
         className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/40 text-charcoal px-3 py-2 hover:bg-charcoal/5"
