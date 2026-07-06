@@ -650,7 +650,7 @@ function SegmentEditor({
       scriptText: updated.script_text ?? "",
       countdown:
         updated.countdown_seconds != null ? String(updated.countdown_seconds) : "",
-      isActive: updated.is_active,
+      
       overrideCard: updated.override_card_color,
       overrideText: updated.override_text_color,
       entryFieldsJson: JSON.stringify(updated.entry_fields),
