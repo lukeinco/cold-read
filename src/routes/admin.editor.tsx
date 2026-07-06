@@ -784,6 +784,15 @@ function SegmentEditor({
           </Field>
         )}
 
+        {isTextEntry && (
+          <Field label="Response fields">
+            <EntryFieldsEditor value={entryFields} onChange={setEntryFields} />
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Each field becomes a labeled input under the title. Drag order is by list order.
+            </p>
+          </Field>
+        )}
+
         {isText && (
           <Field label="Slide preview">
             <div
