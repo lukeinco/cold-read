@@ -624,7 +624,7 @@ function SegmentEditor({
       cue_color: isAudio ? "#2B2B28" : cueColor,
       script_text: hasScript ? scriptText : null,
       countdown_seconds: hasCountdown ? parsedCountdown : null,
-      is_active: isActive,
+      is_active: true,
       override_card_color: overrideCard,
       override_text_color: overrideText,
       entry_fields: isTextEntry
