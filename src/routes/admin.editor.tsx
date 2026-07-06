@@ -246,7 +246,7 @@ function EditorDashboard({
       setError(error.message);
       return;
     }
-    const list = (data as Segment[]) ?? [];
+    const list = ((data as Record<string, unknown>[]) ?? []).map(normalizeSegment);
     setSegments(list);
     setSelectedId((prev) =>
       prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
@@ -290,7 +290,7 @@ function EditorDashboard({
       setError(error.message);
       return;
     }
-    const created = data as Segment;
+    const created = normalizeSegment(data as Record<string, unknown>);
     setSegments((prev) => [...(prev ?? []), created]);
     setSelectedId(created.id);
   }
