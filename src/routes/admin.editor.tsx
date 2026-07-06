@@ -569,6 +569,7 @@ function SegmentEditor({
   const [overrideText, setOverrideText] = useState<string | null>(
     segment.override_text_color,
   );
+  const [entryFields, setEntryFields] = useState<EntryField[]>(segment.entry_fields);
   const [saving, setSaving] = useState(false);
 
   const initial = useRef({
@@ -581,6 +582,7 @@ function SegmentEditor({
     isActive: segment.is_active,
     overrideCard: segment.override_card_color,
     overrideText: segment.override_text_color,
+    entryFieldsJson: JSON.stringify(segment.entry_fields),
   });
 
   const dirty =
@@ -591,7 +593,8 @@ function SegmentEditor({
     countdown !== initial.current.countdown ||
     isActive !== initial.current.isActive ||
     overrideCard !== initial.current.overrideCard ||
-    overrideText !== initial.current.overrideText;
+    overrideText !== initial.current.overrideText ||
+    JSON.stringify(entryFields) !== initial.current.entryFieldsJson;
 
   const isAudio = type === "audio";
   const isText = type === "text";
