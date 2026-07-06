@@ -563,7 +563,7 @@ function SegmentEditor({
   const [countdown, setCountdown] = useState<string>(
     segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
   );
-  const [isActive, setIsActive] = useState(segment.is_active);
+  
   const [overrideCard, setOverrideCard] = useState<string | null>(
     segment.override_card_color,
   );
