@@ -874,19 +874,6 @@ function SegmentEditor({
           </Field>
         )}
 
-        <Field label="Active">
-          <label className="inline-flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="h-4 w-4 accent-iron"
-            />
-            <span className="font-mono text-xs uppercase tracking-[0.24em] text-charcoal">
-              {isActive ? "Shown to candidates" : "Hidden"}
-            </span>
-          </label>
-        </Field>
 
         {isAudio && (
           <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
