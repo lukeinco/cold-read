@@ -580,7 +580,6 @@ function SegmentEditor({
     scriptText: segment.script_text ?? "",
     countdown:
       segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
-    isActive: segment.is_active,
     overrideCard: segment.override_card_color,
     overrideText: segment.override_text_color,
     entryFieldsJson: JSON.stringify(segment.entry_fields),
@@ -592,7 +591,6 @@ function SegmentEditor({
     cueColor !== initial.current.cueColor ||
     scriptText !== initial.current.scriptText ||
     countdown !== initial.current.countdown ||
-    isActive !== initial.current.isActive ||
     overrideCard !== initial.current.overrideCard ||
     overrideText !== initial.current.overrideText ||
     JSON.stringify(entryFields) !== initial.current.entryFieldsJson;
