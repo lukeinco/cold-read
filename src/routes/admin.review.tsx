@@ -534,7 +534,12 @@ function Detail({
                       {String(r.sort_order + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  {urls[r.id] ? (
+                  {r.response_type === "text" ? (
+                    <TextResponseView
+                      segment={seg}
+                      values={r.text_value ?? {}}
+                    />
+                  ) : urls[r.id] ? (
                     <audio
                       controls
                       src={urls[r.id]}
