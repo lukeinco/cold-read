@@ -27,6 +27,7 @@ import { Route as AppOrgSlugIndexRouteImport } from './routes/app.$orgSlug.index
 import { Route as AppOrgSlugAssessmentSlugRouteImport } from './routes/app.$orgSlug.$assessmentSlug'
 import { Route as ApiAdminSignupRouteImport } from './routes/api/admin.signup'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AppOrgSlugAssessmentSlugIndexRouteImport } from './routes/app.$orgSlug.$assessmentSlug.index'
 import { Route as AppOrgSlugAssessmentSlugScreeningRouteImport } from './routes/app.$orgSlug.$assessmentSlug.screening'
 import { Route as AppOrgSlugAssessmentSlugFinishRouteImport } from './routes/app.$orgSlug.$assessmentSlug.finish'
@@ -125,6 +126,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppOrgSlugAssessmentSlugIndexRoute =
   AppOrgSlugAssessmentSlugIndexRouteImport.update({
     id: '/',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug': typeof AppOrgSlugIndexRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
@@ -299,6 +311,7 @@ export interface RootRouteChildren {
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
   ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminSignupRoute: typeof ApiAdminSignupRoute
   AppOrgSlugAssessmentSlugRoute: typeof AppOrgSlugAssessmentSlugRouteWithChildren
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/$orgSlug/$assessmentSlug/': {
       id: '/app/$orgSlug/$assessmentSlug/'
       path: '/'
@@ -492,6 +512,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
   ApiSubmitSessionRoute: ApiSubmitSessionRoute,
   AdminIndexRoute: AdminIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminSignupRoute: ApiAdminSignupRoute,
   AppOrgSlugAssessmentSlugRoute: AppOrgSlugAssessmentSlugRouteWithChildren,
