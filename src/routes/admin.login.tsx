@@ -9,11 +9,15 @@ export const Route = createFileRoute("/admin/login")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
+  }),
   component: AdminLogin,
 });
 
 function AdminLogin() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +25,12 @@ function AdminLogin() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin" });
+      if (data.session) {
+        if (next) window.location.replace(next);
+        else navigate({ to: "/admin" });
+      }
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +42,8 @@ function AdminLogin() {
       setBusy(false);
       return;
     }
-    navigate({ to: "/admin" });
+    if (next) window.location.replace(next);
+    else navigate({ to: "/admin" });
   }
 
   return (
