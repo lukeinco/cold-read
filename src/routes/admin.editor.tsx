@@ -695,11 +695,9 @@ function SegmentEditor({
           label={
             isAudio
               ? "Admin label (internal only)"
-              : isText
+              : isText || isTextEntry
                 ? "Title"
-                : isTextEntry
-                  ? "Prompt"
-                  : "Cue label"
+                : "Cue label"
           }
         >
           <input
@@ -711,7 +709,7 @@ function SegmentEditor({
                 : isText
                   ? "Slide title"
                   : isTextEntry
-                    ? "What should the candidate write about?"
+                    ? "Heading shown above the fields"
                     : ""
             }
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
