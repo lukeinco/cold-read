@@ -14,6 +14,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
+import { Route as ApiSaveTextRouteImport } from './routes/api/save-text'
 import { Route as ApiSaveRecordingRouteImport } from './routes/api/save-recording'
 import { Route as AdminThemesRouteImport } from './routes/admin.themes'
 import { Route as AdminSignupRouteImport } from './routes/admin.signup'
@@ -55,6 +56,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const ApiSubmitSessionRoute = ApiSubmitSessionRouteImport.update({
   id: '/api/submit-session',
   path: '/api/submit-session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSaveTextRoute = ApiSaveTextRouteImport.update({
+  id: '/api/save-text',
+  path: '/api/save-text',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSaveRecordingRoute = ApiSaveRecordingRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/admin/signup': typeof AdminSignupRoute
   '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/save-text': typeof ApiSaveTextRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/admin/signup': typeof AdminSignupRoute
   '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/save-text': typeof ApiSaveTextRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/admin/signup': typeof AdminSignupRoute
   '/admin/themes': typeof AdminThemesRoute
   '/api/save-recording': typeof ApiSaveRecordingRoute
+  '/api/save-text': typeof ApiSaveTextRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/admin/themes'
     | '/api/save-recording'
+    | '/api/save-text'
     | '/api/submit-session'
     | '/admin/'
     | '/.lovable/oauth/consent'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/admin/themes'
     | '/api/save-recording'
+    | '/api/save-text'
     | '/api/submit-session'
     | '/admin'
     | '/.lovable/oauth/consent'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/admin/signup'
     | '/admin/themes'
     | '/api/save-recording'
+    | '/api/save-text'
     | '/api/submit-session'
     | '/admin/'
     | '/.lovable/oauth/consent'
@@ -309,6 +321,7 @@ export interface RootRouteChildren {
   AdminSignupRoute: typeof AdminSignupRoute
   AdminThemesRoute: typeof AdminThemesRoute
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
+  ApiSaveTextRoute: typeof ApiSaveTextRoute
   ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
@@ -353,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/api/submit-session'
       fullPath: '/api/submit-session'
       preLoaderRoute: typeof ApiSubmitSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/save-text': {
+      id: '/api/save-text'
+      path: '/api/save-text'
+      fullPath: '/api/save-text'
+      preLoaderRoute: typeof ApiSaveTextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/save-recording': {
@@ -510,6 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSignupRoute: AdminSignupRoute,
   AdminThemesRoute: AdminThemesRoute,
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
+  ApiSaveTextRoute: ApiSaveTextRoute,
   ApiSubmitSessionRoute: ApiSubmitSessionRoute,
   AdminIndexRoute: AdminIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
