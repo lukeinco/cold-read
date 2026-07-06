@@ -360,8 +360,9 @@ function EditorDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-parchment flex">
-      <div className="flex-1 min-w-0 px-6 py-12">
+    <main className="min-h-screen bg-parchment lg:pr-11">
+      <div className="px-6 py-12">
+
         <div className="max-w-6xl mx-auto">
         <header className="flex items-baseline justify-between border-b-2 border-charcoal/20 pb-4">
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
@@ -837,6 +838,8 @@ function SegmentEditor({
             scriptText={scriptText}
             overrideCard={overrideCard}
             overrideText={overrideText}
+            isTextEntry={isTextEntry}
+            entryFields={entryFields}
           />
         )}
 
@@ -1519,6 +1522,8 @@ function ResponseStepPreview({
   scriptText,
   overrideCard,
   overrideText,
+  isTextEntry = false,
+  entryFields = [],
 }: {
   theme: Theme;
   titleFont: string;
@@ -1527,16 +1532,21 @@ function ResponseStepPreview({
   scriptText: string;
   overrideCard: string | null;
   overrideText: string | null;
+  isTextEntry?: boolean;
+  entryFields?: EntryField[];
 }) {
   const bg = theme.bg_color ?? "#0C1A22";
   const card = overrideCard ?? theme.card_color ?? "#1B3A32";
   const text = overrideText ?? theme.text_color ?? "#EDF2EE";
   const accent = theme.accent_color ?? "#E8B84B";
+  const muted = theme.muted_color ?? "#9DB0B2";
+  const titleStack = fontStack(titleFont, DEFAULT_TITLE_FONT);
+  const bodyStack = fontStack(bodyFont, DEFAULT_BODY_FONT);
   return (
     <Field label="Candidate preview">
       <div
         className="w-full p-6 flex flex-col items-center"
-        style={{ background: bg }}
+        style={{ background: bg, fontFamily: bodyStack }}
       >
         <div
           className="w-full max-w-md p-6 rounded-md"
@@ -1544,16 +1554,40 @@ function ResponseStepPreview({
         >
           <div
             className="uppercase text-xs tracking-[0.28em] mb-3"
-            style={{ fontFamily: fontStack(titleFont, DEFAULT_TITLE_FONT), color: accent }}
+            style={{ fontFamily: titleStack, color: accent }}
           >
             {cueLabel || "Cue label"}
           </div>
-          <div
-            className="text-base leading-relaxed"
-            style={{ fontFamily: fontStack(bodyFont, DEFAULT_BODY_FONT), color: text }}
-          >
-            {scriptText.trim() || "Script text preview…"}
-          </div>
+          {scriptText.trim() && (
+            <div
+              className="text-base leading-relaxed"
+              style={{ fontFamily: bodyStack, color: text }}
+            >
+              {scriptText}
+            </div>
+          )}
+          {isTextEntry && (
+            <div className="mt-5 space-y-4">
+              {(entryFields.length > 0
+                ? entryFields
+                : [{ id: "_ph", label: "Field label" }]
+              ).map((f) => (
+                <div key={f.id}>
+                  <div
+                    className="text-[10px] uppercase tracking-[0.24em] mb-1"
+                    style={{ fontFamily: bodyStack, color: muted }}
+                  >
+                    {f.label.trim() || "Field label"}
+                  </div>
+                  <div
+                    className="h-8 border-b-2"
+                    style={{ borderColor: muted }}
+                    aria-hidden
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Field>
