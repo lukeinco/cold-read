@@ -8,7 +8,7 @@ import {
   type Org,
   type Assessment,
 } from "@/lib/org-queries";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
