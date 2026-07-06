@@ -626,6 +626,11 @@ function SegmentEditor({
       is_active: isActive,
       override_card_color: overrideCard,
       override_text_color: overrideText,
+      entry_fields: isTextEntry
+        ? entryFields
+            .map((f) => ({ id: f.id, label: f.label.trim() }))
+            .filter((f) => f.label.length > 0)
+        : [],
     };
     const { data, error } = await supabase
       .from("segments")
@@ -649,7 +654,9 @@ function SegmentEditor({
       isActive: updated.is_active,
       overrideCard: updated.override_card_color,
       overrideText: updated.override_text_color,
+      entryFieldsJson: JSON.stringify(updated.entry_fields),
     };
+    setEntryFields(updated.entry_fields);
     onSaved(updated);
   }
 
