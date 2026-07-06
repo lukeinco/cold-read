@@ -23,8 +23,10 @@ const urlSchema = z
   .string()
   .trim()
   .max(500)
-  .url()
-  .refine((v) => /linkedin\.com/i.test(v), "Must be a LinkedIn URL");
+  .refine(
+    (v) => /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[A-Za-z0-9\-_%]+\/?$/i.test(v),
+    "Enter as linkedin.com/in/your-name",
+  );
 
 function FinishScreen() {
   const { sessionId, sessionToken, clearSession } = useSession();
@@ -53,7 +55,7 @@ function FinishScreen() {
           sessionId,
           sessionToken,
           email: email.trim(),
-          linkedinUrl: linkedin.trim(),
+          linkedinUrl: linkedin.trim().replace(/^(https?:\/\/)?(www\.)?/i, "https://www."),
         }),
       });
     } catch {
@@ -110,7 +112,7 @@ function FinishScreen() {
             value={linkedin}
             onChange={setLinkedin}
             valid={linkedin.length === 0 || urlValid}
-            placeholder="https://www.linkedin.com/in/…"
+            placeholder="www.linkedin.com/in/…"
             autoComplete="url"
           />
 
