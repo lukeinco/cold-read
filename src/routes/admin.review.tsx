@@ -680,3 +680,51 @@ function typeLabel(t: string | undefined) {
   if (t === "improv") return "Improv";
   return t ?? "—";
 }
+
+function TextResponseView({
+  segment,
+  values,
+}: {
+  segment: SegmentMeta | undefined;
+  values: Record<string, string>;
+}) {
+  const fields = segment?.entry_fields ?? [];
+  const known = new Set(fields.map((f) => f.id));
+  const extras = Object.entries(values).filter(([id]) => !known.has(id));
+
+  if (fields.length === 0 && extras.length === 0) {
+    return (
+      <p className="mt-3 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
+        No text entered.
+      </p>
+    );
+  }
+
+  return (
+    <dl className="mt-3 space-y-3">
+      {fields.map((f) => {
+        const v = values[f.id] ?? "";
+        return (
+          <div key={f.id} className="border border-charcoal/15 bg-parchment px-4 py-3">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
+              {f.label}
+            </dt>
+            <dd className="mt-1 font-serif text-base text-charcoal whitespace-pre-wrap break-words">
+              {v.trim() ? v : <span className="text-charcoal/40">—</span>}
+            </dd>
+          </div>
+        );
+      })}
+      {extras.map(([id, v]) => (
+        <div key={id} className="border border-charcoal/15 bg-parchment px-4 py-3">
+          <dt className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/40">
+            {id} (removed)
+          </dt>
+          <dd className="mt-1 font-serif text-base text-charcoal whitespace-pre-wrap break-words">
+            {v}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
