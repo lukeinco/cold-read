@@ -37,6 +37,8 @@ type SegmentType =
   | "scripted"
   | "improv";
 
+type EntryField = { id: string; label: string };
+
 type Segment = {
   id: string;
   org_id: string | null;
@@ -51,6 +53,7 @@ type Segment = {
   cue_label: string;
   override_card_color: string | null;
   override_text_color: string | null;
+  entry_fields: EntryField[];
   created_at: string;
   updated_at: string;
 };
@@ -86,6 +89,20 @@ function readableOn(bg: string): string {
   const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
   const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return l > 0.6 ? "#2B2B28" : "#F5F0E8";
+}
+
+function normalizeSegment(row: Record<string, unknown>): Segment {
+  const rawFields = Array.isArray(row.entry_fields) ? row.entry_fields : [];
+  const entry_fields: EntryField[] = rawFields
+    .filter(
+      (f): f is { id: string; label: string } =>
+        !!f &&
+        typeof f === "object" &&
+        typeof (f as { id?: unknown }).id === "string" &&
+        typeof (f as { label?: unknown }).label === "string",
+    )
+    .map((f) => ({ id: f.id, label: f.label }));
+  return { ...(row as unknown as Segment), entry_fields };
 }
 
 
@@ -229,7 +246,7 @@ function EditorDashboard({
       setError(error.message);
       return;
     }
-    const list = (data as Segment[]) ?? [];
+    const list = ((data as Record<string, unknown>[]) ?? []).map(normalizeSegment);
     setSegments(list);
     setSelectedId((prev) =>
       prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? null,
@@ -273,7 +290,7 @@ function EditorDashboard({
       setError(error.message);
       return;
     }
-    const created = data as Segment;
+    const created = normalizeSegment(data as Record<string, unknown>);
     setSegments((prev) => [...(prev ?? []), created]);
     setSelectedId(created.id);
   }
@@ -552,6 +569,7 @@ function SegmentEditor({
   const [overrideText, setOverrideText] = useState<string | null>(
     segment.override_text_color,
   );
+  const [entryFields, setEntryFields] = useState<EntryField[]>(segment.entry_fields);
   const [saving, setSaving] = useState(false);
 
   const initial = useRef({
@@ -564,6 +582,7 @@ function SegmentEditor({
     isActive: segment.is_active,
     overrideCard: segment.override_card_color,
     overrideText: segment.override_text_color,
+    entryFieldsJson: JSON.stringify(segment.entry_fields),
   });
 
   const dirty =
@@ -574,7 +593,8 @@ function SegmentEditor({
     countdown !== initial.current.countdown ||
     isActive !== initial.current.isActive ||
     overrideCard !== initial.current.overrideCard ||
-    overrideText !== initial.current.overrideText;
+    overrideText !== initial.current.overrideText ||
+    JSON.stringify(entryFields) !== initial.current.entryFieldsJson;
 
   const isAudio = type === "audio";
   const isText = type === "text";
@@ -606,6 +626,11 @@ function SegmentEditor({
       is_active: isActive,
       override_card_color: overrideCard,
       override_text_color: overrideText,
+      entry_fields: isTextEntry
+        ? entryFields
+            .map((f) => ({ id: f.id, label: f.label.trim() }))
+            .filter((f) => f.label.length > 0)
+        : [],
     };
     const { data, error } = await supabase
       .from("segments")
@@ -618,7 +643,7 @@ function SegmentEditor({
       onError(error.message);
       return;
     }
-    const updated = data as Segment;
+    const updated = normalizeSegment(data as Record<string, unknown>);
     initial.current = {
       type: updated.type,
       cueLabel: updated.cue_label,
@@ -629,7 +654,9 @@ function SegmentEditor({
       isActive: updated.is_active,
       overrideCard: updated.override_card_color,
       overrideText: updated.override_text_color,
+      entryFieldsJson: JSON.stringify(updated.entry_fields),
     };
+    setEntryFields(updated.entry_fields);
     onSaved(updated);
   }
 
@@ -678,11 +705,9 @@ function SegmentEditor({
           label={
             isAudio
               ? "Admin label (internal only)"
-              : isText
+              : isText || isTextEntry
                 ? "Title"
-                : isTextEntry
-                  ? "Prompt"
-                  : "Cue label"
+                : "Cue label"
           }
         >
           <input
@@ -694,7 +719,7 @@ function SegmentEditor({
                 : isText
                   ? "Slide title"
                   : isTextEntry
-                    ? "What should the candidate write about?"
+                    ? "Heading shown above the fields"
                     : ""
             }
             className="w-full bg-transparent border-b-2 border-charcoal/40 focus:border-primary py-2 font-serif text-lg text-charcoal focus:outline-none"
@@ -756,6 +781,15 @@ function SegmentEditor({
               }
               className="w-full bg-transparent border border-charcoal/25 focus:border-primary p-3 font-serif text-base text-charcoal focus:outline-none"
             />
+          </Field>
+        )}
+
+        {isTextEntry && (
+          <Field label="Response fields">
+            <EntryFieldsEditor value={entryFields} onChange={setEntryFields} />
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
+              Each field becomes a labeled input under the title. Drag order is by list order.
+            </p>
           </Field>
         )}
 
@@ -937,7 +971,7 @@ function PromptAudioSection({
     if (segment.prompt_audio_path && segment.prompt_audio_path !== newPath) {
       await supabase.storage.from("prompts").remove([segment.prompt_audio_path]);
     }
-    onSaved(data as Segment);
+    onSaved(normalizeSegment(data as Record<string, unknown>));
   }
 
   async function uploadBlob(blob: Blob, ext: string) {
@@ -981,7 +1015,7 @@ function PromptAudioSection({
       onError(error.message);
       return;
     }
-    onSaved(data as Segment);
+    onSaved(normalizeSegment(data as Record<string, unknown>));
   }
 
   return (
@@ -1624,6 +1658,93 @@ function ColorRow({
           aria-label={c}
         />
       ))}
+    </div>
+  );
+}
+
+function EntryFieldsEditor({
+  value,
+  onChange,
+}: {
+  value: EntryField[];
+  onChange: (next: EntryField[]) => void;
+}) {
+  function updateAt(idx: number, label: string) {
+    onChange(value.map((f, i) => (i === idx ? { ...f, label } : f)));
+  }
+  function removeAt(idx: number) {
+    onChange(value.filter((_, i) => i !== idx));
+  }
+  function move(idx: number, dir: -1 | 1) {
+    const j = idx + dir;
+    if (j < 0 || j >= value.length) return;
+    const next = [...value];
+    [next[idx], next[j]] = [next[j], next[idx]];
+    onChange(next);
+  }
+  function add() {
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `f_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    onChange([...value, { id, label: "" }]);
+  }
+
+  return (
+    <div className="space-y-2">
+      {value.length === 0 ? (
+        <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
+          No fields yet.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {value.map((f, idx) => (
+            <li
+              key={f.id}
+              className="flex items-center gap-2 border border-charcoal/25 bg-parchment px-3 py-2"
+            >
+              <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50 w-6 tabular-nums">
+                {String(idx + 1).padStart(2, "0")}
+              </span>
+              <input
+                value={f.label}
+                onChange={(e) => updateAt(idx, e.target.value)}
+                placeholder="Field label (e.g. Name)"
+                maxLength={128}
+                className="flex-1 bg-transparent border-b border-charcoal/25 focus:border-primary py-1 font-serif text-base text-charcoal focus:outline-none"
+              />
+              <button
+                onClick={() => move(idx, -1)}
+                disabled={idx === 0}
+                className="font-mono text-xs text-charcoal/60 disabled:opacity-30 hover:text-primary px-1"
+                aria-label="Move up"
+              >
+                ↑
+              </button>
+              <button
+                onClick={() => move(idx, 1)}
+                disabled={idx === value.length - 1}
+                className="font-mono text-xs text-charcoal/60 disabled:opacity-30 hover:text-primary px-1"
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                onClick={() => removeAt(idx)}
+                className="font-mono text-[10px] uppercase tracking-[0.24em] text-primary hover:underline px-1"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        onClick={add}
+        className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/40 text-charcoal px-3 py-2 hover:bg-charcoal/5"
+      >
+        + Add field
+      </button>
     </div>
   );
 }

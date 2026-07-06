@@ -16,6 +16,11 @@ export type SegmentType =
   | "scripted"
   | "improv";
 
+export interface EntryField {
+  id: string;
+  label: string;
+}
+
 export interface Segment {
   id: string;
   type: SegmentType;
@@ -26,6 +31,7 @@ export interface Segment {
   cueLabel: string;
   overrideCardColor: string | null;
   overrideTextColor: string | null;
+  entryFields: EntryField[];
 }
 
 function segmentsForAssessmentQueryOptions(assessmentId: string) {
@@ -35,23 +41,36 @@ function segmentsForAssessmentQueryOptions(assessmentId: string) {
       const { data, error } = await supabase
         .from("segments")
         .select(
-          "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label, override_card_color, override_text_color",
+          "id, type, prompt_audio_path, script_text, countdown_seconds, cue_color, cue_label, override_card_color, override_text_color, entry_fields",
         )
         .eq("assessment_id", assessmentId)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((r) => ({
-        id: r.id as string,
-        type: r.type as SegmentType,
-        promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
-        scriptText: (r.script_text as string | null) ?? null,
-        countdownSeconds: (r.countdown_seconds as number | null) ?? null,
-        cueColor: r.cue_color as string,
-        cueLabel: r.cue_label as string,
-        overrideCardColor: (r.override_card_color as string | null) ?? null,
-        overrideTextColor: (r.override_text_color as string | null) ?? null,
-      }));
+      return (data ?? []).map((r) => {
+        const rawFields = Array.isArray(r.entry_fields) ? r.entry_fields : [];
+        const entryFields: EntryField[] = rawFields
+          .filter(
+            (f): f is { id: string; label: string } =>
+              !!f &&
+              typeof f === "object" &&
+              typeof (f as { id?: unknown }).id === "string" &&
+              typeof (f as { label?: unknown }).label === "string",
+          )
+          .map((f) => ({ id: f.id, label: f.label }));
+        return {
+          id: r.id as string,
+          type: r.type as SegmentType,
+          promptAudioPath: (r.prompt_audio_path as string | null) ?? null,
+          scriptText: (r.script_text as string | null) ?? null,
+          countdownSeconds: (r.countdown_seconds as number | null) ?? null,
+          cueColor: r.cue_color as string,
+          cueLabel: r.cue_label as string,
+          overrideCardColor: (r.override_card_color as string | null) ?? null,
+          overrideTextColor: (r.override_text_color as string | null) ?? null,
+          entryFields,
+        };
+      });
     },
   });
 }
@@ -442,9 +461,11 @@ function TextEntryPhase({
   sortOrder: number;
   onDone: () => void;
 }) {
-  const [text, setText] = useState("");
+  const fields = segment.entryFields;
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(fields.map((f) => [f.id, ""])),
+  );
   const [status, setStatus] = useState<"idle" | "saving" | "failed">("idle");
-  const [remaining, setRemaining] = useState(segment.countdownSeconds ?? 0);
   const submittedRef = useRef(false);
 
   const submit = useCallback(async () => {
@@ -452,14 +473,17 @@ function TextEntryPhase({
     submittedRef.current = true;
     setStatus("saving");
     try {
-      const blob = new Blob([text], { type: "text/plain" });
-      const form = new FormData();
-      form.append("sessionId", sessionId);
-      form.append("sessionToken", sessionToken);
-      form.append("segmentId", segment.id);
-      form.append("sortOrder", String(sortOrder));
-      form.append("audio", blob, `${segment.id}.txt`);
-      const res = await fetch("/api/save-recording", { method: "POST", body: form });
+      const res = await fetch("/api/save-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          sessionToken,
+          segmentId: segment.id,
+          sortOrder,
+          values,
+        }),
+      });
       if (!res.ok) throw new Error(await res.text().catch(() => "save failed"));
       onDone();
     } catch (err) {
@@ -467,25 +491,10 @@ function TextEntryPhase({
       submittedRef.current = false;
       setStatus("failed");
     }
-  }, [text, sessionId, sessionToken, segment.id, sortOrder, onDone]);
+  }, [values, sessionId, sessionToken, segment.id, sortOrder, onDone]);
 
-  useEffect(() => {
-    if (segment.countdownSeconds == null) return;
-    const start = performance.now();
-    const total = segment.countdownSeconds;
-    const id = window.setInterval(() => {
-      const left = Math.max(0, total - (performance.now() - start) / 1000);
-      setRemaining(left);
-      if (left <= 0) {
-        window.clearInterval(id);
-        void submit();
-      }
-    }, 200);
-    return () => window.clearInterval(id);
-  }, [segment.countdownSeconds, submit]);
-
-  const hasCountdown = segment.countdownSeconds != null;
-  const secondsDisplay = hasCountdown ? Math.ceil(remaining) : null;
+  const allFilled =
+    fields.length === 0 || fields.every((f) => (values[f.id] ?? "").trim().length > 0);
   const cardBg = segment.overrideCardColor ?? undefined;
   const textColor = segment.overrideTextColor ?? undefined;
 
@@ -513,35 +522,55 @@ function TextEntryPhase({
             <em>{segment.scriptText}</em>
           </p>
         )}
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={status === "saving"}
-          placeholder="Type your response…"
-          className="mt-6 flex-1 min-h-[240px] w-full bg-transparent border a-border-muted focus:a-border-accent p-4 a-font-body text-lg a-text focus:outline-none resize-none disabled:opacity-60"
-          style={textColor ? { color: textColor } : undefined}
-          autoFocus
-        />
-        <div className="mt-6 flex items-center justify-between gap-4">
+
+        <div className="mt-8 flex-1 space-y-6">
+          {fields.length === 0 ? (
+            <p
+              className="a-font-body text-sm a-text"
+              style={textColor ? { color: textColor, opacity: 0.7 } : { opacity: 0.7 }}
+            >
+              No fields configured for this step.
+            </p>
+          ) : (
+            fields.map((f) => (
+              <label key={f.id} className="block">
+                <span
+                  className="a-font-body text-[11px] uppercase tracking-[0.28em]"
+                  style={textColor ? { color: textColor, opacity: 0.7 } : { opacity: 0.7 }}
+                >
+                  {f.label}
+                </span>
+                <input
+                  type="text"
+                  value={values[f.id] ?? ""}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, [f.id]: e.target.value }))
+                  }
+                  disabled={status === "saving"}
+                  maxLength={4000}
+                  className="mt-2 w-full bg-transparent border-b-2 a-border-muted focus:a-border-accent py-2 a-font-body text-lg a-text focus:outline-none disabled:opacity-60"
+                  style={textColor ? { color: textColor } : undefined}
+                />
+              </label>
+            ))
+          )}
+        </div>
+
+        <div className="mt-8 flex items-center justify-between gap-4">
           <div className="a-font-body text-[11px] uppercase tracking-[0.24em] a-muted">
-            {hasCountdown ? (
-              <span className="tabular-nums">
-                {String(secondsDisplay ?? 0).padStart(2, "0")}s remaining
-              </span>
+            {status === "failed" ? (
+              <span className="a-accent">Save failed — try again</span>
             ) : (
               <span>Take your time</span>
-            )}
-            {status === "failed" && (
-              <span className="ml-3 a-accent">Save failed — try again</span>
             )}
           </div>
           <button
             onClick={() => void submit()}
-            disabled={status === "saving" || text.trim().length === 0}
+            disabled={status === "saving" || !allFilled}
             className="inline-flex items-center gap-3 a-accent-bg a-font-body text-sm uppercase tracking-[0.28em] px-8 py-4 transition-transform hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0"
             style={{ color: "var(--a-bg)" }}
           >
-            <span>{status === "saving" ? "Saving…" : "Submit"}</span>
+            <span>{status === "saving" ? "Saving…" : "Continue"}</span>
             <span aria-hidden>→</span>
           </button>
         </div>

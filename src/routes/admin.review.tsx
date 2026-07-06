@@ -25,8 +25,12 @@ type ResponseRow = {
   id: string;
   segment_id: string;
   sort_order: number;
-  storage_path: string;
+  storage_path: string | null;
+  response_type: "audio" | "text";
+  text_value: Record<string, string> | null;
 };
+
+type EntryField = { id: string; label: string };
 
 type SegmentMeta = {
   id: string;
@@ -34,6 +38,7 @@ type SegmentMeta = {
   cue_label: string;
   is_active: boolean;
   sort_order: number;
+  entry_fields: EntryField[];
 };
 
 type ReviewRow = {
@@ -42,6 +47,27 @@ type ReviewRow = {
   rating: number | null;
   notes: string | null;
 };
+
+function coerceSegmentMeta(row: Record<string, unknown>): SegmentMeta {
+  const rawFields = Array.isArray(row.entry_fields) ? row.entry_fields : [];
+  const entry_fields: EntryField[] = rawFields
+    .filter(
+      (f): f is { id: string; label: string } =>
+        !!f &&
+        typeof f === "object" &&
+        typeof (f as { id?: unknown }).id === "string" &&
+        typeof (f as { label?: unknown }).label === "string",
+    )
+    .map((f) => ({ id: f.id, label: f.label }));
+  return {
+    id: row.id as string,
+    type: row.type as string,
+    cue_label: row.cue_label as string,
+    is_active: row.is_active as boolean,
+    sort_order: row.sort_order as number,
+    entry_fields,
+  };
+}
 
 function ReviewPage() {
   const navigate = useNavigate();
@@ -153,11 +179,11 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
     (async () => {
       const { data: segs } = await supabase
         .from("segments")
-        .select("id,type,cue_label,is_active,sort_order")
+        .select("id,type,cue_label,is_active,sort_order,entry_fields")
         .eq("assessment_id", assessmentId)
         .order("sort_order", { ascending: true });
       if (!alive) return;
-      const segList = (segs as SegmentMeta[]) ?? [];
+      const segList = ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta);
       setActiveSegments(segList.filter((s) => s.is_active));
 
       const { data: sess } = await supabase
@@ -360,20 +386,33 @@ function Detail({
     (async () => {
       const { data } = await supabase
         .from("responses")
-        .select("id,segment_id,sort_order,storage_path")
+        .select("id,segment_id,sort_order,storage_path,response_type,text_value")
         .eq("session_id", session.id)
         .order("sort_order", { ascending: true });
-      const rows = (data as ResponseRow[]) ?? [];
+      const rows = ((data as Record<string, unknown>[]) ?? []).map((r) => ({
+        id: r.id as string,
+        segment_id: r.segment_id as string,
+        sort_order: r.sort_order as number,
+        storage_path: (r.storage_path as string | null) ?? null,
+        response_type: ((r.response_type as string) === "text" ? "text" : "audio") as
+          | "audio"
+          | "text",
+        text_value:
+          r.text_value && typeof r.text_value === "object" && !Array.isArray(r.text_value)
+            ? (r.text_value as Record<string, string>)
+            : null,
+      }));
       setResponses(rows);
 
       const segIds = Array.from(new Set(rows.map((r) => r.segment_id)));
       if (segIds.length) {
         const { data: segs } = await supabase
           .from("segments")
-          .select("id,type,cue_label,is_active,sort_order")
+          .select("id,type,cue_label,is_active,sort_order,entry_fields")
           .in("id", segIds);
         const map: Record<string, SegmentMeta> = {};
-        for (const s of (segs as SegmentMeta[] | null) ?? []) map[s.id] = s;
+        for (const s of ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta))
+          map[s.id] = s;
         setSegments(map);
       }
 
@@ -389,12 +428,15 @@ function Detail({
         setReviews(revMap);
       }
 
+      const audioRows = rows.filter(
+        (r) => r.response_type === "audio" && r.storage_path,
+      );
       const signed: Record<string, string> = {};
       await Promise.all(
-        rows.map(async (r) => {
+        audioRows.map(async (r) => {
           const { data: s } = await supabase.storage
             .from("recordings")
-            .createSignedUrl(r.storage_path, 60 * 60);
+            .createSignedUrl(r.storage_path as string, 60 * 60);
           if (s?.signedUrl) signed[r.id] = s.signedUrl;
         }),
       );
@@ -492,7 +534,12 @@ function Detail({
                       {String(r.sort_order + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  {urls[r.id] ? (
+                  {r.response_type === "text" ? (
+                    <TextResponseView
+                      segment={seg}
+                      values={r.text_value ?? {}}
+                    />
+                  ) : urls[r.id] ? (
                     <audio
                       controls
                       src={urls[r.id]}
@@ -632,4 +679,52 @@ function typeLabel(t: string | undefined) {
   if (t === "scripted") return "Scripted";
   if (t === "improv") return "Improv";
   return t ?? "—";
+}
+
+function TextResponseView({
+  segment,
+  values,
+}: {
+  segment: SegmentMeta | undefined;
+  values: Record<string, string>;
+}) {
+  const fields = segment?.entry_fields ?? [];
+  const known = new Set(fields.map((f) => f.id));
+  const extras = Object.entries(values).filter(([id]) => !known.has(id));
+
+  if (fields.length === 0 && extras.length === 0) {
+    return (
+      <p className="mt-3 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
+        No text entered.
+      </p>
+    );
+  }
+
+  return (
+    <dl className="mt-3 space-y-3">
+      {fields.map((f) => {
+        const v = values[f.id] ?? "";
+        return (
+          <div key={f.id} className="border border-charcoal/15 bg-parchment px-4 py-3">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
+              {f.label}
+            </dt>
+            <dd className="mt-1 font-serif text-base text-charcoal whitespace-pre-wrap break-words">
+              {v.trim() ? v : <span className="text-charcoal/40">—</span>}
+            </dd>
+          </div>
+        );
+      })}
+      {extras.map(([id, v]) => (
+        <div key={id} className="border border-charcoal/15 bg-parchment px-4 py-3">
+          <dt className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/40">
+            {id} (removed)
+          </dt>
+          <dd className="mt-1 font-serif text-base text-charcoal whitespace-pre-wrap break-words">
+            {v}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
 }

@@ -163,26 +163,32 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          response_type: string
           segment_id: string
           session_id: string
           sort_order: number
-          storage_path: string
+          storage_path: string | null
+          text_value: Json | null
         }
         Insert: {
           created_at?: string
           id?: string
+          response_type?: string
           segment_id: string
           session_id: string
           sort_order: number
-          storage_path: string
+          storage_path?: string | null
+          text_value?: Json | null
         }
         Update: {
           created_at?: string
           id?: string
+          response_type?: string
           segment_id?: string
           session_id?: string
           sort_order?: number
-          storage_path?: string
+          storage_path?: string | null
+          text_value?: Json | null
         }
         Relationships: [
           {
@@ -239,6 +245,7 @@ export type Database = {
           created_at: string
           cue_color: string
           cue_label: string
+          entry_fields: Json
           id: string
           is_active: boolean
           org_id: string
@@ -256,6 +263,7 @@ export type Database = {
           created_at?: string
           cue_color: string
           cue_label: string
+          entry_fields?: Json
           id?: string
           is_active?: boolean
           org_id: string
@@ -273,6 +281,7 @@ export type Database = {
           created_at?: string
           cue_color?: string
           cue_label?: string
+          entry_fields?: Json
           id?: string
           is_active?: boolean
           org_id?: string
