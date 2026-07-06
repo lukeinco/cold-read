@@ -1414,11 +1414,6 @@ function SegmentCard({
         <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
           {isTextEntry ? "✎ Text response" : typeLabel(segment.type)}
         </span>
-        {!segment.is_active && (
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
-            · inactive
-          </span>
-        )}
         {segment.countdown_seconds != null && (
           <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
             {segment.countdown_seconds}s
