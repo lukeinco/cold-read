@@ -15,6 +15,12 @@ type Props = {
   onAssessmentChange: (a: Assessment) => void;
 };
 
+/**
+ * Fixed-position, always-visible presentation panel (>=1024px).
+ * Collapsed: 44px vertical strip of active theme swatches + expand chevron.
+ * Expanded: ~25% width (min 300px) with swatch-only theme picker and font pickers.
+ * Uses dark chrome so text is always readable on either state.
+ */
 export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
   const [themes, setThemes] = useState<Theme[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -46,9 +52,7 @@ export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
     () => themes?.find((t) => t.id === assessment.theme_id) ?? null,
     [themes, assessment.theme_id],
   );
-
   const activeSwatches = activeTheme ? themeSwatches(activeTheme) : [];
-
   const titleFont = assessment.title_font ?? DEFAULT_TITLE_FONT;
   const bodyFont = assessment.body_font ?? DEFAULT_BODY_FONT;
 
@@ -70,10 +74,10 @@ export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
 
   return (
     <>
-      {/* Desktop (>=lg): right-docked, expands the sidebar width */}
+      {/* Desktop (>=lg): fixed right rail, always present */}
       <aside
-        className={`hidden lg:flex flex-col border-l-2 border-charcoal/20 bg-parchment sticky top-0 self-start h-screen shrink-0 transition-[width] duration-200 overflow-hidden ${
-          open ? "w-[max(300px,25vw)]" : "w-12"
+        className={`hidden lg:flex flex-col fixed right-0 top-0 h-screen z-40 bg-charcoal text-parchment shadow-[-2px_0_8px_rgba(0,0,0,0.25)] transition-[width] duration-200 ${
+          open ? "w-[max(300px,25vw)]" : "w-11"
         }`}
       >
         {open ? (
@@ -95,29 +99,28 @@ export function PresentationPanel({ assessment, onAssessmentChange }: Props) {
       </aside>
 
       {/* Mobile (<lg): full-width bar, expands downward */}
-      <div className="lg:hidden -mt-4 mb-4 border border-charcoal/25 bg-parchment">
+      <div className="lg:hidden -mt-4 mb-4 border border-charcoal bg-charcoal text-parchment">
         <button
           onClick={() => setOpen((v) => !v)}
           className="w-full flex items-center gap-3 px-4 py-3"
           aria-expanded={open}
         >
-          <PaletteIcon />
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {activeSwatches.map((c, i) => (
               <span
                 key={i}
-                className="h-4 w-4 border border-charcoal/20"
+                className="h-4 w-4 border border-parchment/25"
                 style={{ background: c }}
                 aria-hidden
               />
             ))}
           </div>
-          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
-            {activeTheme?.name ?? "Theme"} · {open ? "Hide" : "Edit"}
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/80">
+            {open ? "Hide" : "Theme"}
           </span>
         </button>
         {open && (
-          <div className="border-t border-charcoal/15 p-4">
+          <div className="border-t border-parchment/15 p-4">
             <ExpandedPanel
               activeTheme={activeTheme}
               themes={themes}
@@ -146,20 +149,20 @@ function CollapsedRail({
     <button
       onClick={onExpand}
       aria-label="Open presentation panel"
-      className="flex flex-col items-center gap-3 py-4 hover:bg-charcoal/[0.04] h-full w-full"
+      className="flex flex-col items-center justify-between py-3 h-full w-full hover:bg-parchment/[0.06] transition-colors"
     >
-      <PaletteIcon />
+      <span className="text-parchment/70 text-sm leading-none">‹</span>
       <div className="flex flex-col items-center gap-1.5">
         {swatches.map((c, i) => (
           <span
             key={i}
-            className="h-5 w-5 border border-charcoal/20"
+            className="h-5 w-5 border border-parchment/25"
             style={{ background: c }}
             aria-hidden
           />
         ))}
       </div>
-      <TypeIcon />
+      <span aria-hidden className="w-2" />
     </button>
   );
 }
@@ -186,13 +189,13 @@ function ExpandedPanel({
   return (
     <div className={`flex flex-col overflow-y-auto ${compact ? "" : "h-full"}`}>
       {!compact && (
-        <div className="flex items-center justify-between border-b border-charcoal/15 px-4 py-3">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-charcoal">
+        <div className="flex items-center justify-between border-b border-parchment/15 px-4 py-3">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-parchment">
             Presentation
           </span>
           <button
             onClick={onCollapse}
-            className="font-mono text-lg leading-none text-charcoal/70 hover:text-charcoal"
+            className="font-mono text-lg leading-none text-parchment/80 hover:text-parchment"
             aria-label="Collapse"
           >
             ›
@@ -206,13 +209,13 @@ function ExpandedPanel({
         </p>
       )}
 
-      {/* THEME */}
-      <section className="px-4 py-4 border-b border-charcoal/10">
-        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/70 mb-3">
+      {/* THEME — swatches only, no names */}
+      <section className="px-4 py-4 border-b border-parchment/10">
+        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-parchment/70 mb-3">
           Theme
         </div>
         {themes === null ? (
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/50">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/60">
             Loading…
           </p>
         ) : (
@@ -223,33 +226,22 @@ function ExpandedPanel({
                 <li key={t.id}>
                   <button
                     onClick={() => updateAssessment({ theme_id: t.id })}
-                    className={`w-full flex items-center gap-2 px-2 py-2 border transition-colors text-left ${
+                    aria-label={t.name}
+                    title={t.name}
+                    className={`w-full flex items-center gap-1 px-2 py-2 border transition-colors ${
                       active
-                        ? "border-charcoal bg-charcoal/[0.05]"
-                        : "border-transparent hover:border-charcoal/20"
+                        ? "border-parchment bg-parchment/[0.08]"
+                        : "border-transparent hover:border-parchment/25"
                     }`}
                   >
-                    <span
-                      className={`font-mono text-[10px] uppercase tracking-[0.24em] flex-1 truncate ${
-                        active ? "text-charcoal" : "text-charcoal/75"
-                      }`}
-                    >
-                      {active ? "● " : "  "}
-                      {t.name}
-                      {!t.is_preset && (
-                        <span className="ml-1 text-charcoal/45">· custom</span>
-                      )}
-                    </span>
-                    <span className="flex items-center gap-0.5 shrink-0">
-                      {themeSwatches(t).map((c, i) => (
-                        <span
-                          key={i}
-                          className="h-4 w-4 border border-charcoal/15"
-                          style={{ background: c }}
-                          aria-hidden
-                        />
-                      ))}
-                    </span>
+                    {themeSwatches(t).map((c, i) => (
+                      <span
+                        key={i}
+                        className="h-6 flex-1 border border-parchment/20"
+                        style={{ background: c }}
+                        aria-hidden
+                      />
+                    ))}
                   </button>
                 </li>
               );
@@ -259,8 +251,8 @@ function ExpandedPanel({
       </section>
 
       {/* TITLE FONT */}
-      <section className="px-4 py-4 border-b border-charcoal/10">
-        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/70 mb-3">
+      <section className="px-4 py-4 border-b border-parchment/10">
+        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-parchment/70 mb-3">
           Title font
         </div>
         <ul className="space-y-1">
@@ -272,17 +264,17 @@ function ExpandedPanel({
                   onClick={() => updateAssessment({ title_font: f.family })}
                   className={`w-full text-left px-2 py-2 border transition-colors ${
                     active
-                      ? "border-charcoal bg-charcoal/[0.05]"
-                      : "border-transparent hover:border-charcoal/20"
+                      ? "border-parchment bg-parchment/[0.08]"
+                      : "border-transparent hover:border-parchment/25"
                   }`}
                   style={{
                     fontFamily: f.stack,
                     fontWeight: f.displayWeight ?? 500,
                   }}
                 >
-                  <span className="text-xl text-charcoal">{f.family}</span>
+                  <span className="text-xl text-parchment">{f.family}</span>
                   {active && (
-                    <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60 align-middle">
+                    <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/70 align-middle">
                       ● active
                     </span>
                   )}
@@ -293,7 +285,7 @@ function ExpandedPanel({
         </ul>
         <button
           onClick={() => updateAssessment({ title_font: bodyFont })}
-          className="mt-3 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary underline underline-offset-4"
+          className="mt-3 font-mono text-[10px] uppercase tracking-[0.24em] text-parchment/75 hover:text-primary underline underline-offset-4"
         >
           Same as body
         </button>
@@ -301,7 +293,7 @@ function ExpandedPanel({
 
       {/* BODY FONT */}
       <section className="px-4 py-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/70 mb-3">
+        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-parchment/70 mb-3">
           Body font
         </div>
         <ul className="space-y-1">
@@ -313,20 +305,20 @@ function ExpandedPanel({
                   onClick={() => updateAssessment({ body_font: f.family })}
                   className={`w-full text-left px-2 py-2 border transition-colors ${
                     active
-                      ? "border-charcoal bg-charcoal/[0.05]"
-                      : "border-transparent hover:border-charcoal/20"
+                      ? "border-parchment bg-parchment/[0.08]"
+                      : "border-transparent hover:border-parchment/25"
                   }`}
                   style={{ fontFamily: f.stack }}
                 >
-                  <span className="text-sm text-charcoal">
+                  <span className="text-sm text-parchment">
                     The quick prospect answers on the first ring.
                   </span>
                   <div className="mt-0.5 flex items-center gap-2">
-                    <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-charcoal/50">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-parchment/60">
                       {f.family}
                     </span>
                     {active && (
-                      <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-charcoal/70">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-parchment/80">
                         ● active
                       </span>
                     )}
@@ -338,32 +330,6 @@ function ExpandedPanel({
         </ul>
       </section>
     </div>
-  );
-}
-
-function PaletteIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      className="text-charcoal/70"
-      aria-hidden
-    >
-      <path d="M12 3a9 9 0 100 18 3 3 0 003-3v-1a2 2 0 012-2h1a3 3 0 003-3 9 9 0 00-9-9z" />
-      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" />
-      <circle cx="12" cy="7" r="1" fill="currentColor" />
-      <circle cx="16.5" cy="10.5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function TypeIcon() {
-  return (
-    <span className="font-serif text-lg text-charcoal/70 leading-none">Aa</span>
   );
 }
 
