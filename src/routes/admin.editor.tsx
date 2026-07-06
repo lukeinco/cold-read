@@ -282,7 +282,7 @@ function EditorDashboard({
         type: kind,
         cue_color: defaults.cue_color!,
         cue_label: defaults.cue_label!,
-        is_active: false,
+        is_active: true,
       })
       .select("*")
       .single();
@@ -563,7 +563,7 @@ function SegmentEditor({
   const [countdown, setCountdown] = useState<string>(
     segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
   );
-  const [isActive, setIsActive] = useState(segment.is_active);
+  
   const [overrideCard, setOverrideCard] = useState<string | null>(
     segment.override_card_color,
   );
@@ -580,7 +580,6 @@ function SegmentEditor({
     scriptText: segment.script_text ?? "",
     countdown:
       segment.countdown_seconds != null ? String(segment.countdown_seconds) : "",
-    isActive: segment.is_active,
     overrideCard: segment.override_card_color,
     overrideText: segment.override_text_color,
     entryFieldsJson: JSON.stringify(segment.entry_fields),
@@ -592,7 +591,6 @@ function SegmentEditor({
     cueColor !== initial.current.cueColor ||
     scriptText !== initial.current.scriptText ||
     countdown !== initial.current.countdown ||
-    isActive !== initial.current.isActive ||
     overrideCard !== initial.current.overrideCard ||
     overrideText !== initial.current.overrideText ||
     JSON.stringify(entryFields) !== initial.current.entryFieldsJson;
@@ -624,7 +622,7 @@ function SegmentEditor({
       cue_color: isAudio ? "#2B2B28" : cueColor,
       script_text: hasScript ? scriptText : null,
       countdown_seconds: hasCountdown ? parsedCountdown : null,
-      is_active: isActive,
+      is_active: true,
       override_card_color: overrideCard,
       override_text_color: overrideText,
       entry_fields: isTextEntry
@@ -652,7 +650,7 @@ function SegmentEditor({
       scriptText: updated.script_text ?? "",
       countdown:
         updated.countdown_seconds != null ? String(updated.countdown_seconds) : "",
-      isActive: updated.is_active,
+      
       overrideCard: updated.override_card_color,
       overrideText: updated.override_text_color,
       entryFieldsJson: JSON.stringify(updated.entry_fields),
@@ -874,19 +872,6 @@ function SegmentEditor({
           </Field>
         )}
 
-        <Field label="Active">
-          <label className="inline-flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="h-4 w-4 accent-iron"
-            />
-            <span className="font-mono text-xs uppercase tracking-[0.24em] text-charcoal">
-              {isActive ? "Shown to candidates" : "Hidden"}
-            </span>
-          </label>
-        </Field>
 
         {isAudio && (
           <PromptAudioSection segment={segment} onSaved={onSaved} onError={onError} />
@@ -1356,11 +1341,6 @@ function SegmentCard({
             <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/80">
               Prospect audio
             </span>
-            {!segment.is_active && (
-              <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/60">
-                · inactive
-              </span>
-            )}
             <span
               className="ml-auto font-mono text-xs uppercase tracking-[0.22em] font-semibold"
               style={{ color: path ? "#8FCBB0" : "#F0866E" }}
@@ -1404,11 +1384,6 @@ function SegmentCard({
             <span className="font-mono text-[10px] uppercase tracking-[0.28em]">
               ▤ Slide
             </span>
-            {!segment.is_active && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ opacity: 0.6 }}>
-                · inactive
-              </span>
-            )}
           </div>
           <div className="mt-1 font-display uppercase text-sm tracking-wide truncate">
             {segment.cue_label || "Untitled slide"}
@@ -1439,11 +1414,6 @@ function SegmentCard({
         <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
           {isTextEntry ? "✎ Text response" : typeLabel(segment.type)}
         </span>
-        {!segment.is_active && (
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/40">
-            · inactive
-          </span>
-        )}
         {segment.countdown_seconds != null && (
           <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/60">
             {segment.countdown_seconds}s

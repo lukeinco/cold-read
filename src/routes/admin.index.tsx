@@ -8,7 +8,7 @@ import {
   type Org,
   type Assessment,
 } from "@/lib/org-queries";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -146,65 +146,30 @@ function AdminHub() {
         )}
 
         <div className="mt-8">
-          <Tabs defaultValue="assessments">
-            <TabsList>
-              <TabsTrigger value="assessments">Assessments</TabsTrigger>
-              <TabsTrigger value="links">Screening links</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="assessments" className="mt-6">
-              {data === null ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  Loading…
-                </p>
-              ) : data.length === 0 ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  No orgs yet.
-                </p>
-              ) : (
-                <div className="space-y-8">
-                  {data.map((row) => (
-                    <OrgAssessmentsBlock
-                      key={row.org.id}
-                      org={row.org}
-                      assessments={row.assessments}
-                      counts={row.counts}
-                      onChange={refresh}
-                      onError={setError}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="links" className="mt-6">
-              {data === null ? (
-                <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                  Loading…
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {data.flatMap((row) =>
-                    row.assessments
-                      .filter((a) => a.is_active)
-                      .map((a) => (
-                        <ScreeningLinkRow
-                          key={a.id}
-                          org={row.org}
-                          assessment={a}
-                        />
-                      )),
-                  )}
-                  {data.every((r) => r.assessments.filter((a) => a.is_active).length === 0) && (
-                    <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
-                      No active assessments yet.
-                    </p>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {data === null ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+              Loading…
+            </p>
+          ) : data.length === 0 ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/55">
+              No orgs yet.
+            </p>
+          ) : (
+            <div className="space-y-8">
+              {data.map((row) => (
+                <OrgAssessmentsBlock
+                  key={row.org.id}
+                  org={row.org}
+                  assessments={row.assessments}
+                  counts={row.counts}
+                  onChange={refresh}
+                  onError={setError}
+                />
+              ))}
+            </div>
+          )}
         </div>
+
 
         <ul className="mt-12 divide-y divide-charcoal/15 border-y border-charcoal/15">
           {links.map((l) => (
@@ -516,46 +481,5 @@ function AssessmentRow({
         </div>
       </div>
     </li>
-  );
-}
-
-function ScreeningLinkRow({
-  org,
-  assessment,
-}: {
-  org: Org;
-  assessment: Assessment;
-}) {
-  const [copied, setCopied] = useState(false);
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/app/${org.slug}/${assessment.slug}`
-      : `/app/${org.slug}/${assessment.slug}`;
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      window.prompt("Copy screening link", url);
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-4 border border-charcoal/25 p-4">
-      <div className="flex-1 min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
-          {org.name} · {assessment.name}
-        </div>
-        <div className="mt-1 font-mono text-sm text-charcoal truncate">{url}</div>
-      </div>
-      <button
-        onClick={handleCopy}
-        className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-4 py-2 hover:bg-iron/90 transition-colors"
-      >
-        {copied ? "Copied ✓" : "Copy"}
-      </button>
-    </div>
   );
 }
