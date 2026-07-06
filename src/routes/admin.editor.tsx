@@ -1341,11 +1341,6 @@ function SegmentCard({
             <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/80">
               Prospect audio
             </span>
-            {!segment.is_active && (
-              <span className="font-mono text-xs uppercase tracking-[0.22em] text-charcoal/60">
-                · inactive
-              </span>
-            )}
             <span
               className="ml-auto font-mono text-xs uppercase tracking-[0.22em] font-semibold"
               style={{ color: path ? "#8FCBB0" : "#F0866E" }}
