@@ -25,8 +25,12 @@ type ResponseRow = {
   id: string;
   segment_id: string;
   sort_order: number;
-  storage_path: string;
+  storage_path: string | null;
+  response_type: "audio" | "text";
+  text_value: Record<string, string> | null;
 };
+
+type EntryField = { id: string; label: string };
 
 type SegmentMeta = {
   id: string;
@@ -34,6 +38,7 @@ type SegmentMeta = {
   cue_label: string;
   is_active: boolean;
   sort_order: number;
+  entry_fields: EntryField[];
 };
 
 type ReviewRow = {
