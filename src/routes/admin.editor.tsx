@@ -91,6 +91,20 @@ function readableOn(bg: string): string {
   return l > 0.6 ? "#2B2B28" : "#F5F0E8";
 }
 
+function normalizeSegment(row: Record<string, unknown>): Segment {
+  const rawFields = Array.isArray(row.entry_fields) ? row.entry_fields : [];
+  const entry_fields: EntryField[] = rawFields
+    .filter(
+      (f): f is { id: string; label: string } =>
+        !!f &&
+        typeof f === "object" &&
+        typeof (f as { id?: unknown }).id === "string" &&
+        typeof (f as { label?: unknown }).label === "string",
+    )
+    .map((f) => ({ id: f.id, label: f.label }));
+  return { ...(row as unknown as Segment), entry_fields };
+}
+
 
 function EditorPage() {
   const navigate = useNavigate();
