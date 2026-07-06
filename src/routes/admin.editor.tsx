@@ -785,19 +785,19 @@ function SegmentEditor({
         )}
 
         {isTextEntry && (
-          <Field label="Response fields">
+          <Field label="Fields">
             <EntryFieldsEditor value={entryFields} onChange={setEntryFields} />
-            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/55">
-              Each field becomes a labeled input under the title. Drag order is by list order.
-            </p>
           </Field>
         )}
 
-        {isText && (
+        {isText && theme && (
           <Field label="Slide preview">
             <div
               className="w-full aspect-[16/9] flex flex-col items-center justify-center p-8 text-center overflow-hidden"
-              style={{ background: cueColor, color: readableOn(cueColor) }}
+              style={{
+                background: theme.bg_color ?? "#0C1A22",
+                color: theme.text_color ?? "#EDF2EE",
+              }}
             >
               <div
                 className="uppercase leading-[0.95]"
