@@ -1384,11 +1384,6 @@ function SegmentCard({
             <span className="font-mono text-[10px] uppercase tracking-[0.28em]">
               ▤ Slide
             </span>
-            {!segment.is_active && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ opacity: 0.6 }}>
-                · inactive
-              </span>
-            )}
           </div>
           <div className="mt-1 font-display uppercase text-sm tracking-wide truncate">
             {segment.cue_label || "Untitled slide"}
