@@ -360,8 +360,9 @@ function EditorDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-parchment flex">
-      <div className="flex-1 min-w-0 px-6 py-12">
+    <main className="min-h-screen bg-parchment lg:pr-11">
+      <div className="px-6 py-12">
+
         <div className="max-w-6xl mx-auto">
         <header className="flex items-baseline justify-between border-b-2 border-charcoal/20 pb-4">
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
