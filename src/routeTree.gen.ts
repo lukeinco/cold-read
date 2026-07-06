@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiSubmitSessionRouteImport } from './routes/api/submit-session'
@@ -20,9 +21,13 @@ import { Route as AdminReviewRouteImport } from './routes/admin.review'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminEditorRouteImport } from './routes/admin.editor'
 import { Route as AdminCodesRouteImport } from './routes/admin.codes'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AppOrgSlugIndexRouteImport } from './routes/app.$orgSlug.index'
 import { Route as AppOrgSlugAssessmentSlugRouteImport } from './routes/app.$orgSlug.$assessmentSlug'
 import { Route as ApiAdminSignupRouteImport } from './routes/api/admin.signup'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AppOrgSlugAssessmentSlugIndexRouteImport } from './routes/app.$orgSlug.$assessmentSlug.index'
 import { Route as AppOrgSlugAssessmentSlugScreeningRouteImport } from './routes/app.$orgSlug.$assessmentSlug.screening'
 import { Route as AppOrgSlugAssessmentSlugFinishRouteImport } from './routes/app.$orgSlug.$assessmentSlug.finish'
@@ -30,6 +35,11 @@ import { Route as AppOrgSlugAssessmentSlugFinishRouteImport } from './routes/app
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -82,6 +92,18 @@ const AdminCodesRoute = AdminCodesRouteImport.update({
   path: '/admin/codes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppOrgSlugIndexRoute = AppOrgSlugIndexRouteImport.update({
   id: '/app/$orgSlug/',
   path: '/app/$orgSlug/',
@@ -96,6 +118,17 @@ const AppOrgSlugAssessmentSlugRoute =
 const ApiAdminSignupRoute = ApiAdminSignupRouteImport.update({
   id: '/api/admin/signup',
   path: '/api/admin/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppOrgSlugAssessmentSlugIndexRoute =
@@ -119,7 +152,10 @@ const AppOrgSlugAssessmentSlugFinishRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/review': typeof ReviewRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
@@ -129,6 +165,8 @@ export interface FileRoutesByFullPath {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
   '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
@@ -138,7 +176,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/review': typeof ReviewRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
@@ -148,6 +189,8 @@ export interface FileRoutesByTo {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug': typeof AppOrgSlugIndexRoute
   '/app/$orgSlug/$assessmentSlug/finish': typeof AppOrgSlugAssessmentSlugFinishRoute
@@ -157,7 +200,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/review': typeof ReviewRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/codes': typeof AdminCodesRoute
   '/admin/editor': typeof AdminEditorRoute
   '/admin/login': typeof AdminLoginRoute
@@ -167,6 +213,8 @@ export interface FileRoutesById {
   '/api/save-recording': typeof ApiSaveRecordingRoute
   '/api/submit-session': typeof ApiSubmitSessionRoute
   '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/signup': typeof ApiAdminSignupRoute
   '/app/$orgSlug/$assessmentSlug': typeof AppOrgSlugAssessmentSlugRouteWithChildren
   '/app/$orgSlug/': typeof AppOrgSlugIndexRoute
@@ -178,7 +226,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/mcp'
     | '/review'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/codes'
     | '/admin/editor'
     | '/admin/login'
@@ -188,6 +239,8 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
     | '/app/$orgSlug/'
@@ -197,7 +250,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/mcp'
     | '/review'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/codes'
     | '/admin/editor'
     | '/admin/login'
@@ -207,6 +263,8 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug'
     | '/app/$orgSlug/$assessmentSlug/finish'
@@ -215,7 +273,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/mcp'
     | '/review'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/codes'
     | '/admin/editor'
     | '/admin/login'
@@ -225,6 +286,8 @@ export interface FileRouteTypes {
     | '/api/save-recording'
     | '/api/submit-session'
     | '/admin/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/signup'
     | '/app/$orgSlug/$assessmentSlug'
     | '/app/$orgSlug/'
@@ -235,7 +298,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  McpRoute: typeof McpRoute
   ReviewRoute: typeof ReviewRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminCodesRoute: typeof AdminCodesRoute
   AdminEditorRoute: typeof AdminEditorRoute
   AdminLoginRoute: typeof AdminLoginRoute
@@ -245,6 +311,8 @@ export interface RootRouteChildren {
   ApiSaveRecordingRoute: typeof ApiSaveRecordingRoute
   ApiSubmitSessionRoute: typeof ApiSubmitSessionRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminSignupRoute: typeof ApiAdminSignupRoute
   AppOrgSlugAssessmentSlugRoute: typeof AppOrgSlugAssessmentSlugRouteWithChildren
   AppOrgSlugIndexRoute: typeof AppOrgSlugIndexRoute
@@ -257,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -329,6 +404,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCodesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/$orgSlug/': {
       id: '/app/$orgSlug/'
       path: '/app/$orgSlug'
@@ -348,6 +437,20 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/signup'
       fullPath: '/api/admin/signup'
       preLoaderRoute: typeof ApiAdminSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/$orgSlug/$assessmentSlug/': {
@@ -395,7 +498,11 @@ const AppOrgSlugAssessmentSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  McpRoute: McpRoute,
   ReviewRoute: ReviewRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminCodesRoute: AdminCodesRoute,
   AdminEditorRoute: AdminEditorRoute,
   AdminLoginRoute: AdminLoginRoute,
@@ -405,6 +512,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSaveRecordingRoute: ApiSaveRecordingRoute,
   ApiSubmitSessionRoute: ApiSubmitSessionRoute,
   AdminIndexRoute: AdminIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminSignupRoute: ApiAdminSignupRoute,
   AppOrgSlugAssessmentSlugRoute: AppOrgSlugAssessmentSlugRouteWithChildren,
   AppOrgSlugIndexRoute: AppOrgSlugIndexRoute,
@@ -412,3 +521,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
