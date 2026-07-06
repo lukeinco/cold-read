@@ -48,6 +48,27 @@ type ReviewRow = {
   notes: string | null;
 };
 
+function coerceSegmentMeta(row: Record<string, unknown>): SegmentMeta {
+  const rawFields = Array.isArray(row.entry_fields) ? row.entry_fields : [];
+  const entry_fields: EntryField[] = rawFields
+    .filter(
+      (f): f is { id: string; label: string } =>
+        !!f &&
+        typeof f === "object" &&
+        typeof (f as { id?: unknown }).id === "string" &&
+        typeof (f as { label?: unknown }).label === "string",
+    )
+    .map((f) => ({ id: f.id, label: f.label }));
+  return {
+    id: row.id as string,
+    type: row.type as string,
+    cue_label: row.cue_label as string,
+    is_active: row.is_active as boolean,
+    sort_order: row.sort_order as number,
+    entry_fields,
+  };
+}
+
 function ReviewPage() {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
