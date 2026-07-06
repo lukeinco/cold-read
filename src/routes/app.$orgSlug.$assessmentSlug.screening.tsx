@@ -163,7 +163,7 @@ function Player({
 }) {
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
- const [phase, setPhase] = useState<Phase>(segment.type === "improv" ? "cue" : "respond");
+const [phase, setPhase] = useState<Phase>(segments[index]?.type === "improv" ? "cue" : "respond");
 
   const segment = segments[index];
   const isLast = index === segments.length - 1;
