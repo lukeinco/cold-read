@@ -866,7 +866,7 @@ function SegmentEditor({
                   ? "Optional auto-advance — leave empty to require Continue tap."
                   : isTextEntry
                     ? "Optional writing timer — leave empty for no timer."
-                    : "Leave empty for no timer — improv should be empty."}
+                    : "Leave empty for no timer."}
             </p>
           </Field>
         )}
