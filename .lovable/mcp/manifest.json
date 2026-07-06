@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://xfmzoambtmitjfulalko.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "cold-read-mcp",
+      "version": "0.1.0",
+      "title": "Cold Read"
+    },
+    "tools": [
+      {
+        "name": "list_assessments",
+        "title": "List assessments",
+        "description": "List assessments visible to the signed-in admin, across the orgs they belong to. Returns id, name, slug, org, and active state.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "include_inactive": {
+              "description": "Include inactive assessments. Defaults to false.",
+              "type": "boolean"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_sessions",
+        "title": "List candidate sessions",
+        "description": "List candidate voice-screening sessions the signed-in admin can review. Filter by assessment_id and/or submitted-only.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "assessment_id": {
+              "description": "Filter to a single assessment.",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "submitted_only": {
+              "description": "If true, only include sessions the candidate submitted. Default true.",
+              "type": "boolean"
+            },
+            "limit": {
+              "description": "Max rows. Default 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_session",
+        "title": "Get session with responses",
+        "description": "Fetch one candidate session's contact info and the ordered list of recorded responses (segment label, duration, storage path).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "session_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Session UUID from list_sessions."
+            }
+          },
+          "required": [
+            "session_id"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
