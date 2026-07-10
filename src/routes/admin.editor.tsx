@@ -444,7 +444,29 @@ function EditorDashboard({
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
             COLD READ — EDITOR
           </h1>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={handleAsk}
+              disabled={!assessmentId}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+              title="Copy a Cold Read primer to paste into Claude or ChatGPT"
+            >
+              {askCopied ? "Primer copied ✓" : "Ask Claude / GPT"}
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={!segments || segments.length === 0}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={() => setImportOpen(true)}
+              disabled={!assessmentId}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+            >
+              Import JSON
+            </button>
             <Link
               to="/admin"
               className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
