@@ -307,6 +307,71 @@ function EditorDashboard({
   }
 
 
+  function handleExport() {
+    if (!currentAssessment || !segments) return;
+    const payload = buildExport(currentAssessment.name, segments);
+    downloadJson(`${slugifyFilename(currentAssessment.name)}.json`, payload);
+  }
+
+  async function handleAsk() {
+    try {
+      await navigator.clipboard.writeText(AI_PRIMER);
+      setAskCopied(true);
+      setTimeout(() => setAskCopied(false), 2500);
+    } catch {
+      window.prompt("Copy the Cold Read primer:", AI_PRIMER);
+    }
+  }
+
+  async function handleImportSteps(
+    steps: ExportedStep[],
+    mode: "replace" | "append",
+  ): Promise<void> {
+    if (!orgId || !assessmentId) throw new Error("Pick an assessment first.");
+    if (mode === "replace") {
+      const { error: delErr } = await supabase
+        .from("segments")
+        .delete()
+        .eq("assessment_id", assessmentId);
+      if (delErr) throw delErr;
+    }
+    const baseOrder =
+      mode === "append"
+        ? (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1
+        : 1;
+    const rows = [...steps]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((s, i) => ({
+        org_id: orgId,
+        assessment_id: assessmentId,
+        sort_order: baseOrder + i,
+        type: s.type,
+        cue_color: s.cue_color,
+        cue_label: s.cue_label,
+        script_text: s.script_text,
+        countdown_seconds: s.countdown_seconds,
+        override_card_color: s.override_card_color,
+        override_text_color: s.override_text_color,
+        entry_fields: s.entry_fields,
+        is_active: true,
+        prompt_audio_path: null,
+      }));
+    if (rows.length) {
+      const { error: insErr } = await supabase
+        .from("segments")
+        .insert(rows as never);
+      if (insErr) throw insErr;
+    }
+    await load();
+    const hasAudio = steps.some((s) => s.type === "audio");
+    setNotice(
+      hasAudio
+        ? "Imported. Add your prompt audio to each call step in the editor."
+        : "Imported.",
+    );
+    setTimeout(() => setNotice(null), 6000);
+  }
+
   async function handleDropReorder(targetId: string) {
     if (!dragId || !segments || dragId === targetId) {
       setDragId(null);
