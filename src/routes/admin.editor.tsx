@@ -184,6 +184,9 @@ function EditorDashboard({
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [themes, setThemes] = useState<Theme[] | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [askCopied, setAskCopied] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
