@@ -17,6 +17,14 @@ import {
   inPalette,
   themeSwatches,
 } from "@/lib/themes";
+import {
+  AI_PRIMER,
+  buildExport,
+  downloadJson,
+  parseImport,
+  slugifyFilename,
+  type ExportedStep,
+} from "@/lib/assessment-io";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
@@ -176,6 +184,9 @@ function EditorDashboard({
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [themes, setThemes] = useState<Theme[] | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [askCopied, setAskCopied] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -296,6 +307,71 @@ function EditorDashboard({
   }
 
 
+  function handleExport() {
+    if (!currentAssessment || !segments) return;
+    const payload = buildExport(currentAssessment.name, segments);
+    downloadJson(`${slugifyFilename(currentAssessment.name)}.json`, payload);
+  }
+
+  async function handleAsk() {
+    try {
+      await navigator.clipboard.writeText(AI_PRIMER);
+      setAskCopied(true);
+      setTimeout(() => setAskCopied(false), 2500);
+    } catch {
+      window.prompt("Copy the Cold Read primer:", AI_PRIMER);
+    }
+  }
+
+  async function handleImportSteps(
+    steps: ExportedStep[],
+    mode: "replace" | "append",
+  ): Promise<void> {
+    if (!orgId || !assessmentId) throw new Error("Pick an assessment first.");
+    if (mode === "replace") {
+      const { error: delErr } = await supabase
+        .from("segments")
+        .delete()
+        .eq("assessment_id", assessmentId);
+      if (delErr) throw delErr;
+    }
+    const baseOrder =
+      mode === "append"
+        ? (segments?.reduce((m, s) => Math.max(m, s.sort_order), 0) ?? 0) + 1
+        : 1;
+    const rows = [...steps]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((s, i) => ({
+        org_id: orgId,
+        assessment_id: assessmentId,
+        sort_order: baseOrder + i,
+        type: s.type,
+        cue_color: s.cue_color,
+        cue_label: s.cue_label,
+        script_text: s.script_text,
+        countdown_seconds: s.countdown_seconds,
+        override_card_color: s.override_card_color,
+        override_text_color: s.override_text_color,
+        entry_fields: s.entry_fields,
+        is_active: true,
+        prompt_audio_path: null,
+      }));
+    if (rows.length) {
+      const { error: insErr } = await supabase
+        .from("segments")
+        .insert(rows as never);
+      if (insErr) throw insErr;
+    }
+    await load();
+    const hasAudio = steps.some((s) => s.type === "audio");
+    setNotice(
+      hasAudio
+        ? "Imported. Add your prompt audio to each call step in the editor."
+        : "Imported.",
+    );
+    setTimeout(() => setNotice(null), 6000);
+  }
+
   async function handleDropReorder(targetId: string) {
     if (!dragId || !segments || dragId === targetId) {
       setDragId(null);
@@ -368,7 +444,29 @@ function EditorDashboard({
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
             COLD READ — EDITOR
           </h1>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={handleAsk}
+              disabled={!assessmentId}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+              title="Copy a Cold Read primer to paste into Claude or ChatGPT"
+            >
+              {askCopied ? "Primer copied ✓" : "Ask Claude / GPT"}
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={!segments || segments.length === 0}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+            >
+              Export JSON
+            </button>
+            <button
+              onClick={() => setImportOpen(true)}
+              disabled={!assessmentId}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary disabled:opacity-40"
+            >
+              Import JSON
+            </button>
             <Link
               to="/admin"
               className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
@@ -472,6 +570,11 @@ function EditorDashboard({
             {error}
           </p>
         )}
+        {notice && (
+          <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-juniper">
+            {notice}
+          </p>
+        )}
 
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8">
@@ -533,6 +636,16 @@ function EditorDashboard({
         <PresentationPanel
           assessment={currentAssessment}
           onAssessmentChange={handleAssessmentChange}
+        />
+      )}
+      {importOpen && (
+        <ImportJsonModal
+          hasExisting={(segments?.length ?? 0) > 0}
+          onCancel={() => setImportOpen(false)}
+          onImport={async (steps, mode) => {
+            await handleImportSteps(steps, mode);
+            setImportOpen(false);
+          }}
         />
       )}
     </main>
@@ -1727,6 +1840,130 @@ function EntryFieldsEditor({
       >
         + Add field
       </button>
+    </div>
+  );
+}
+
+function ImportJsonModal({
+  hasExisting,
+  onCancel,
+  onImport,
+}: {
+  hasExisting: boolean;
+  onCancel: () => void;
+  onImport: (steps: ExportedStep[], mode: "replace" | "append") => Promise<void>;
+}) {
+  const [text, setText] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"replace" | "append">(
+    hasExisting ? "replace" : "append",
+  );
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(f: File) {
+    setErr(null);
+    const t = await f.text();
+    setText(t);
+  }
+
+  async function handleGo() {
+    setErr(null);
+    let parsed;
+    try {
+      parsed = parseImport(text);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Invalid JSON");
+      return;
+    }
+    setBusy(true);
+    try {
+      await onImport(parsed.steps, mode);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-charcoal/70 flex items-center justify-center px-4"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-2xl bg-parchment border border-charcoal/30 p-6 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-display text-2xl text-charcoal">Import JSON</h2>
+        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
+          Paste JSON or upload a file exported from Cold Read.
+        </p>
+
+        <div className="mt-4 flex items-center gap-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+            }}
+            className="font-mono text-xs"
+          />
+        </div>
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder='{ "schemaVersion": 1, "assessmentName": "…", "steps": [ … ] }'
+          className="mt-4 w-full h-64 bg-white border border-charcoal/30 p-3 font-mono text-xs text-charcoal focus:outline-none focus:border-primary"
+        />
+
+        {hasExisting && (
+          <div className="mt-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={mode === "replace"}
+                onChange={() => setMode("replace")}
+              />
+              Replace all steps
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={mode === "append"}
+                onChange={() => setMode("append")}
+              />
+              Append to existing
+            </label>
+          </div>
+        )}
+
+        {err && (
+          <p className="mt-4 font-mono text-xs text-primary whitespace-pre-wrap">
+            {err}
+          </p>
+        )}
+
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary px-3 py-2"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => void handleGo()}
+            disabled={busy || !text.trim()}
+            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-4 py-2 disabled:opacity-40"
+          >
+            {busy ? "Importing…" : "Import"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

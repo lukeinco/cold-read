@@ -8,6 +8,7 @@ import {
   type Org,
   type Assessment,
 } from "@/lib/org-queries";
+import { AI_PRIMER } from "@/lib/assessment-io";
 
 
 export const Route = createFileRoute("/admin/")({
@@ -31,6 +32,17 @@ function AdminHub() {
   const [data, setData] = useState<OrgAssessments[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [askCopied, setAskCopied] = useState(false);
+
+  async function handleAsk() {
+    try {
+      await navigator.clipboard.writeText(AI_PRIMER);
+      setAskCopied(true);
+      setTimeout(() => setAskCopied(false), 2500);
+    } catch {
+      window.prompt("Copy the Cold Read primer:", AI_PRIMER);
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -131,12 +143,21 @@ function AdminHub() {
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
             COLD READ — ADMIN
           </h1>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleAsk}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] border border-charcoal/30 px-3 py-1.5 text-charcoal hover:border-primary hover:text-primary"
+              title="Copy a Cold Read primer to paste into Claude or ChatGPT"
+            >
+              {askCopied ? "Primer copied ✓" : "Ask Claude / GPT"}
+            </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
+            >
+              Sign out
+            </button>
+          </div>
         </header>
 
         {error && (
