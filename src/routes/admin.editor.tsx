@@ -570,6 +570,11 @@ function EditorDashboard({
             {error}
           </p>
         )}
+        {notice && (
+          <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-juniper">
+            {notice}
+          </p>
+        )}
 
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8">
