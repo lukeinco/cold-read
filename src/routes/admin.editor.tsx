@@ -1843,3 +1843,127 @@ function EntryFieldsEditor({
     </div>
   );
 }
+
+function ImportJsonModal({
+  hasExisting,
+  onCancel,
+  onImport,
+}: {
+  hasExisting: boolean;
+  onCancel: () => void;
+  onImport: (steps: ExportedStep[], mode: "replace" | "append") => Promise<void>;
+}) {
+  const [text, setText] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"replace" | "append">(
+    hasExisting ? "replace" : "append",
+  );
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(f: File) {
+    setErr(null);
+    const t = await f.text();
+    setText(t);
+  }
+
+  async function handleGo() {
+    setErr(null);
+    let parsed;
+    try {
+      parsed = parseImport(text);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Invalid JSON");
+      return;
+    }
+    setBusy(true);
+    try {
+      await onImport(parsed.steps, mode);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-charcoal/70 flex items-center justify-center px-4"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-2xl bg-parchment border border-charcoal/30 p-6 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-display text-2xl text-charcoal">Import JSON</h2>
+        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
+          Paste JSON or upload a file exported from Cold Read.
+        </p>
+
+        <div className="mt-4 flex items-center gap-3">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+            }}
+            className="font-mono text-xs"
+          />
+        </div>
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder='{ "schemaVersion": 1, "assessmentName": "…", "steps": [ … ] }'
+          className="mt-4 w-full h-64 bg-white border border-charcoal/30 p-3 font-mono text-xs text-charcoal focus:outline-none focus:border-primary"
+        />
+
+        {hasExisting && (
+          <div className="mt-4 flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={mode === "replace"}
+                onChange={() => setMode("replace")}
+              />
+              Replace all steps
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={mode === "append"}
+                onChange={() => setMode("append")}
+              />
+              Append to existing
+            </label>
+          </div>
+        )}
+
+        {err && (
+          <p className="mt-4 font-mono text-xs text-primary whitespace-pre-wrap">
+            {err}
+          </p>
+        )}
+
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary px-3 py-2"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => void handleGo()}
+            disabled={busy || !text.trim()}
+            className="font-mono text-[11px] uppercase tracking-[0.24em] bg-iron text-on-accent px-4 py-2 disabled:opacity-40"
+          >
+            {busy ? "Importing…" : "Import"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
