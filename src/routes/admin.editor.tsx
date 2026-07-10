@@ -638,6 +638,16 @@ function EditorDashboard({
           onAssessmentChange={handleAssessmentChange}
         />
       )}
+      {importOpen && (
+        <ImportJsonModal
+          hasExisting={(segments?.length ?? 0) > 0}
+          onCancel={() => setImportOpen(false)}
+          onImport={async (steps, mode) => {
+            await handleImportSteps(steps, mode);
+            setImportOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }
