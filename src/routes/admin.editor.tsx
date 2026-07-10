@@ -17,6 +17,14 @@ import {
   inPalette,
   themeSwatches,
 } from "@/lib/themes";
+import {
+  AI_PRIMER,
+  buildExport,
+  downloadJson,
+  parseImport,
+  slugifyFilename,
+  type ExportedStep,
+} from "@/lib/assessment-io";
 
 export const Route = createFileRoute("/admin/editor")({
   head: () => ({
