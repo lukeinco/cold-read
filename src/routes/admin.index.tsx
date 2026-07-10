@@ -32,6 +32,17 @@ function AdminHub() {
   const [data, setData] = useState<OrgAssessments[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [askCopied, setAskCopied] = useState(false);
+
+  async function handleAsk() {
+    try {
+      await navigator.clipboard.writeText(AI_PRIMER);
+      setAskCopied(true);
+      setTimeout(() => setAskCopied(false), 2500);
+    } catch {
+      window.prompt("Copy the Cold Read primer:", AI_PRIMER);
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
