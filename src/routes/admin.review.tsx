@@ -331,28 +331,53 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
         </div>
 
 
+        <div className="mt-6 flex gap-2">
+          {(["active", "archived"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`font-mono text-[11px] uppercase tracking-[0.24em] px-3 py-1.5 border transition-colors ${
+                view === v
+                  ? "border-primary text-primary bg-primary/5"
+                  : "border-charcoal/25 text-charcoal/60 hover:text-charcoal"
+              }`}
+            >
+              {v === "active" ? "Active" : "Archived"}
+            </button>
+          ))}
+        </div>
+
         {rows === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
             Loading…
           </p>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <p className="mt-16 font-mono text-sm uppercase tracking-[0.24em] text-charcoal/60">
-            No submissions yet.
+            {view === "active" ? "No submissions yet." : "No archived submissions."}
           </p>
         ) : (
-          <ul className="mt-8 divide-y divide-charcoal/15">
-            {rows.map((r) => {
-              const c = respCounts[r.id] ?? { total: 0, activeCovered: 0 };
-              const complete = activeTotal > 0 && c.activeCovered >= activeTotal;
+          <ul className="mt-6 divide-y divide-charcoal/15">
+            {visibleRows.map((r) => {
+              const unread = r.read_at === null && r.archived_at === null;
               return (
                 <li key={r.id}>
-                  <button
-                    onClick={() => setSelected(r)}
-                    className="w-full grid grid-cols-1 md:grid-cols-[1.4fr_1.4fr_auto_auto_auto] gap-2 md:gap-6 items-baseline py-5 text-left hover:bg-charcoal/[0.04] transition-colors px-2"
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-[auto_1.4fr_1.2fr_auto_auto_auto] gap-2 md:gap-5 items-center py-4 px-2 hover:bg-charcoal/[0.04] transition-colors ${
+                      unread ? "font-semibold" : ""
+                    }`}
                   >
-                    <span className="font-serif text-base text-charcoal truncate">
-                      {r.email ?? "—"}
-                    </span>
+                    <span
+                      aria-label={unread ? "Unread" : "Read"}
+                      className={`inline-block w-2.5 h-2.5 rounded-full ${
+                        unread ? "bg-red-500" : "bg-transparent"
+                      }`}
+                    />
+                    <button
+                      onClick={() => setSelected(r)}
+                      className="text-left font-serif text-base text-charcoal truncate hover:text-primary"
+                    >
+                      {displayName(r)}
+                    </button>
                     <span className="font-mono text-xs text-charcoal/70 truncate">
                       {r.linkedin_url ? (
                         <a
@@ -368,29 +393,31 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
                         "—"
                       )}
                     </span>
+                    <MiniStars value={r.overall_rating} />
                     <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
                       {formatDate(r.submitted_at)}
                     </span>
-                    <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
-                      {c.total} resp
-                    </span>
-                    <span
-                      className={`justify-self-start md:justify-self-end font-mono text-[10px] uppercase tracking-[0.24em] px-2 py-1 border ${
-                        complete
-                          ? "border-juniper text-juniper"
-                          : "border-primary text-primary"
-                      }`}
-                    >
-                      {complete
-                        ? "Complete"
-                        : `Partial (${c.activeCovered}/${activeTotal})`}
-                    </span>
-                  </button>
+                    <div className="flex items-center gap-2 justify-self-start md:justify-self-end">
+                      <button
+                        onClick={() => void setRead(r.id, r.read_at === null)}
+                        className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+                      >
+                        {r.read_at === null ? "Mark read" : "Mark unread"}
+                      </button>
+                      <button
+                        onClick={() => void setArchived(r.id, r.archived_at === null)}
+                        className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+                      >
+                        {r.archived_at === null ? "Archive" : "Unarchive"}
+                      </button>
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
+
       </div>
     </main>
   );
