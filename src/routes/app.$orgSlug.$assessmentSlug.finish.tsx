@@ -18,6 +18,7 @@ export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/finish")({
   component: FinishScreen,
 });
 
+const nameSchema = z.string().trim().min(1).max(120);
 const emailSchema = z.string().trim().email().max(255);
 const urlSchema = z
   .string()
@@ -30,15 +31,18 @@ const urlSchema = z
 
 function FinishScreen() {
   const { sessionId, sessionToken, clearSession } = useSession();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const nameValid = useMemo(() => nameSchema.safeParse(name).success, [name]);
   const emailValid = useMemo(() => emailSchema.safeParse(email).success, [email]);
   const urlValid = useMemo(() => urlSchema.safeParse(linkedin).success, [linkedin]);
-  const canSubmit = emailValid && urlValid && !submitting && !!sessionId && !!sessionToken;
+  const canSubmit = nameValid && emailValid && urlValid && !submitting && !!sessionId && !!sessionToken;
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
