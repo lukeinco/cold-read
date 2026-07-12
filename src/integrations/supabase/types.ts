@@ -312,33 +312,45 @@ export type Database = {
       }
       sessions: {
         Row: {
+          archived_at: string | null
           assessment_id: string
           client_token: string
           created_at: string
           email: string | null
           id: string
           linkedin_url: string | null
+          name: string | null
           org_id: string
+          overall_rating: number | null
+          read_at: string | null
           submitted_at: string | null
         }
         Insert: {
+          archived_at?: string | null
           assessment_id: string
           client_token?: string
           created_at?: string
           email?: string | null
           id?: string
           linkedin_url?: string | null
+          name?: string | null
           org_id: string
+          overall_rating?: number | null
+          read_at?: string | null
           submitted_at?: string | null
         }
         Update: {
+          archived_at?: string | null
           assessment_id?: string
           client_token?: string
           created_at?: string
           email?: string | null
           id?: string
           linkedin_url?: string | null
+          name?: string | null
           org_id?: string
+          overall_rating?: number | null
+          read_at?: string | null
           submitted_at?: string | null
         }
         Relationships: [
