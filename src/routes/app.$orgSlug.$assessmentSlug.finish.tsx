@@ -103,6 +103,15 @@ function FinishScreen() {
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-6">
           <Field
+            label="FULL NAME"
+            type="text"
+            value={name}
+            onChange={setName}
+            valid={name.length === 0 || nameValid}
+            placeholder="Jane Doe"
+            autoComplete="name"
+          />
+          <Field
             label="EMAIL"
             type="email"
             value={email}
@@ -111,6 +120,7 @@ function FinishScreen() {
             placeholder="you@company.com"
             autoComplete="email"
           />
+
           <Field
             label="LINKEDIN URL"
             type="url"
