@@ -58,6 +58,7 @@ function FinishScreen() {
         body: JSON.stringify({
           sessionId,
           sessionToken,
+          name: name.trim(),
           email: email.trim(),
           linkedinUrl: linkedin.trim().replace(/^(https?:\/\/)?(www\.)?/i, "https://www."),
         }),
