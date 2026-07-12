@@ -504,9 +504,34 @@ function Detail({
     })();
   }, [session.id, userId]);
 
+  // Auto mark-as-read when opening
+  useEffect(() => {
+    if (session.read_at !== null) return;
+    const now = new Date().toISOString();
+    onPatch(session.id, { read_at: now });
+    void supabase.from("sessions").update({ read_at: now }).eq("id", session.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id]);
+
+  async function setOverallRating(v: number | null) {
+    onPatch(session.id, { overall_rating: v });
+    await supabase.from("sessions").update({ overall_rating: v }).eq("id", session.id);
+  }
+  async function toggleArchived() {
+    const value = session.archived_at === null ? new Date().toISOString() : null;
+    onPatch(session.id, { archived_at: value });
+    await supabase.from("sessions").update({ archived_at: value }).eq("id", session.id);
+  }
+  async function toggleRead() {
+    const value = session.read_at === null ? new Date().toISOString() : null;
+    onPatch(session.id, { read_at: value });
+    await supabase.from("sessions").update({ read_at: value }).eq("id", session.id);
+  }
+
   const upsertReview = useCallback(
     async (responseId: string, patch: { rating?: number | null; notes?: string | null }) => {
       const existing = reviews[responseId];
+
       const next: ReviewRow = {
         id: existing?.id ?? "",
         response_id: responseId,
