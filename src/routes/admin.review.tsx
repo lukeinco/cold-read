@@ -16,10 +16,15 @@ export const Route = createFileRoute("/admin/review")({
 
 type SessionRow = {
   id: string;
+  name: string | null;
   email: string | null;
   linkedin_url: string | null;
   submitted_at: string;
+  overall_rating: number | null;
+  archived_at: string | null;
+  read_at: string | null;
 };
+
 
 type ResponseRow = {
   id: string;
