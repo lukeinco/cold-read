@@ -16,10 +16,15 @@ export const Route = createFileRoute("/admin/review")({
 
 type SessionRow = {
   id: string;
+  name: string | null;
   email: string | null;
   linkedin_url: string | null;
   submitted_at: string;
+  overall_rating: number | null;
+  archived_at: string | null;
+  read_at: string | null;
 };
+
 
 type ResponseRow = {
   id: string;
@@ -121,12 +126,18 @@ function ReviewPage() {
 function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boolean }) {
   const [rows, setRows] = useState<SessionRow[] | null>(null);
   const [selected, setSelected] = useState<SessionRow | null>(null);
-  const [activeSegments, setActiveSegments] = useState<SegmentMeta[]>([]);
-  const [respCounts, setRespCounts] = useState<Record<string, { total: number; activeCovered: number }>>({});
+  const [nameFallbacks, setNameFallbacks] = useState<Record<string, string>>({});
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [view, setView] = useState<"active" | "archived">("active");
+
+  function patchRow(id: string, patch: Partial<SessionRow>) {
+    setRows((prev) => (prev ? prev.map((r) => (r.id === id ? { ...r, ...patch } : r)) : prev));
+    setSelected((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+  }
+
 
   useEffect(() => {
     (async () => {
@@ -171,24 +182,14 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
   useEffect(() => {
     if (!assessmentId) {
       setRows([]);
-      setActiveSegments([]);
-      setRespCounts({});
+      setNameFallbacks({});
       return;
     }
     let alive = true;
     (async () => {
-      const { data: segs } = await supabase
-        .from("segments")
-        .select("id,type,cue_label,is_active,sort_order,entry_fields")
-        .eq("assessment_id", assessmentId)
-        .order("sort_order", { ascending: true });
-      if (!alive) return;
-      const segList = ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta);
-      setActiveSegments(segList.filter((s) => s.is_active));
-
       const { data: sess } = await supabase
         .from("sessions")
-        .select("id,email,linkedin_url,submitted_at")
+        .select("id,name,email,linkedin_url,submitted_at,overall_rating,archived_at,read_at")
         .eq("assessment_id", assessmentId)
         .not("submitted_at", "is", null)
         .order("submitted_at", { ascending: false });
@@ -196,29 +197,34 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
       const sessList = (sess as SessionRow[]) ?? [];
       setRows(sessList);
 
-      if (sessList.length) {
+      // Resolve name fallback for sessions without a stored name.
+      const needing = sessList.filter((s) => !s.name?.trim());
+      if (needing.length) {
         const { data: resps } = await supabase
           .from("responses")
-          .select("session_id,segment_id")
+          .select("session_id,text_value,segments!inner(entry_fields)")
+          .eq("response_type", "text")
           .in(
             "session_id",
-            sessList.map((s) => s.id),
+            needing.map((s) => s.id),
           );
         if (!alive) return;
-        const activeIds = new Set(segList.filter((s) => s.is_active).map((s) => s.id));
-        const counts: Record<string, { total: number; activeCovered: number }> = {};
-        for (const s of sessList) counts[s.id] = { total: 0, activeCovered: 0 };
-        const covered: Record<string, Set<string>> = {};
-        for (const r of (resps as Array<{ session_id: string; segment_id: string }> | null) ?? []) {
-          counts[r.session_id].total += 1;
-          if (activeIds.has(r.segment_id)) {
-            (covered[r.session_id] ??= new Set()).add(r.segment_id);
+        const map: Record<string, string> = {};
+        for (const r of (resps as Array<{
+          session_id: string;
+          text_value: Record<string, string> | null;
+          segments: { entry_fields: Array<{ id: string; label: string }> | null } | null;
+        }> | null) ?? []) {
+          if (map[r.session_id]) continue;
+          const fields = r.segments?.entry_fields ?? [];
+          const nameField = fields.find((f) => /name/i.test(f.label));
+          if (nameField && r.text_value && r.text_value[nameField.id]?.trim()) {
+            map[r.session_id] = r.text_value[nameField.id].trim();
           }
         }
-        for (const s of sessList) counts[s.id].activeCovered = covered[s.id]?.size ?? 0;
-        setRespCounts(counts);
+        setNameFallbacks(map);
       } else {
-        setRespCounts({});
+        setNameFallbacks({});
       }
     })();
     return () => {
@@ -228,17 +234,39 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
 
   void isSuperadmin;
 
+  const displayName = useCallback(
+    (r: SessionRow) => r.name?.trim() || nameFallbacks[r.id] || r.email || "—",
+    [nameFallbacks],
+  );
+
+  async function setArchived(id: string, archived: boolean) {
+    const value = archived ? new Date().toISOString() : null;
+    patchRow(id, { archived_at: value });
+    await supabase.from("sessions").update({ archived_at: value }).eq("id", id);
+  }
+  async function setRead(id: string, read: boolean) {
+    const value = read ? new Date().toISOString() : null;
+    patchRow(id, { read_at: value });
+    await supabase.from("sessions").update({ read_at: value }).eq("id", id);
+  }
+
   if (selected) {
     return (
       <Detail
         session={selected}
         userId={userId}
+        displayName={displayName(selected)}
         onBack={() => setSelected(null)}
+        onPatch={patchRow}
       />
     );
   }
 
-  const activeTotal = activeSegments.length;
+  const visibleRows = (rows ?? []).filter((r) =>
+    view === "active" ? r.archived_at === null : r.archived_at !== null,
+  );
+
+
 
   return (
     <main className="min-h-screen bg-parchment px-6 py-12">
@@ -303,28 +331,53 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
         </div>
 
 
+        <div className="mt-6 flex gap-2">
+          {(["active", "archived"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`font-mono text-[11px] uppercase tracking-[0.24em] px-3 py-1.5 border transition-colors ${
+                view === v
+                  ? "border-primary text-primary bg-primary/5"
+                  : "border-charcoal/25 text-charcoal/60 hover:text-charcoal"
+              }`}
+            >
+              {v === "active" ? "Active" : "Archived"}
+            </button>
+          ))}
+        </div>
+
         {rows === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
             Loading…
           </p>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <p className="mt-16 font-mono text-sm uppercase tracking-[0.24em] text-charcoal/60">
-            No submissions yet.
+            {view === "active" ? "No submissions yet." : "No archived submissions."}
           </p>
         ) : (
-          <ul className="mt-8 divide-y divide-charcoal/15">
-            {rows.map((r) => {
-              const c = respCounts[r.id] ?? { total: 0, activeCovered: 0 };
-              const complete = activeTotal > 0 && c.activeCovered >= activeTotal;
+          <ul className="mt-6 divide-y divide-charcoal/15">
+            {visibleRows.map((r) => {
+              const unread = r.read_at === null && r.archived_at === null;
               return (
                 <li key={r.id}>
-                  <button
-                    onClick={() => setSelected(r)}
-                    className="w-full grid grid-cols-1 md:grid-cols-[1.4fr_1.4fr_auto_auto_auto] gap-2 md:gap-6 items-baseline py-5 text-left hover:bg-charcoal/[0.04] transition-colors px-2"
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-[auto_1.4fr_1.2fr_auto_auto_auto] gap-2 md:gap-5 items-center py-4 px-2 hover:bg-charcoal/[0.04] transition-colors ${
+                      unread ? "font-semibold" : ""
+                    }`}
                   >
-                    <span className="font-serif text-base text-charcoal truncate">
-                      {r.email ?? "—"}
-                    </span>
+                    <span
+                      aria-label={unread ? "Unread" : "Read"}
+                      className={`inline-block w-2.5 h-2.5 rounded-full ${
+                        unread ? "bg-red-500" : "bg-transparent"
+                      }`}
+                    />
+                    <button
+                      onClick={() => setSelected(r)}
+                      className="text-left font-serif text-base text-charcoal truncate hover:text-primary"
+                    >
+                      {displayName(r)}
+                    </button>
                     <span className="font-mono text-xs text-charcoal/70 truncate">
                       {r.linkedin_url ? (
                         <a
@@ -340,29 +393,31 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
                         "—"
                       )}
                     </span>
+                    <MiniStars value={r.overall_rating} />
                     <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
                       {formatDate(r.submitted_at)}
                     </span>
-                    <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/60">
-                      {c.total} resp
-                    </span>
-                    <span
-                      className={`justify-self-start md:justify-self-end font-mono text-[10px] uppercase tracking-[0.24em] px-2 py-1 border ${
-                        complete
-                          ? "border-juniper text-juniper"
-                          : "border-primary text-primary"
-                      }`}
-                    >
-                      {complete
-                        ? "Complete"
-                        : `Partial (${c.activeCovered}/${activeTotal})`}
-                    </span>
-                  </button>
+                    <div className="flex items-center gap-2 justify-self-start md:justify-self-end">
+                      <button
+                        onClick={() => void setRead(r.id, r.read_at === null)}
+                        className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+                      >
+                        {r.read_at === null ? "Mark read" : "Mark unread"}
+                      </button>
+                      <button
+                        onClick={() => void setArchived(r.id, r.archived_at === null)}
+                        className="font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+                      >
+                        {r.archived_at === null ? "Archive" : "Unarchive"}
+                      </button>
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
+
       </div>
     </main>
   );
@@ -371,12 +426,17 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
 function Detail({
   session,
   userId,
+  displayName,
   onBack,
+  onPatch,
 }: {
   session: SessionRow;
   userId: string;
+  displayName: string;
   onBack: () => void;
+  onPatch: (id: string, patch: Partial<SessionRow>) => void;
 }) {
+
   const [responses, setResponses] = useState<ResponseRow[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [segments, setSegments] = useState<Record<string, SegmentMeta>>({});
@@ -444,9 +504,34 @@ function Detail({
     })();
   }, [session.id, userId]);
 
+  // Auto mark-as-read when opening
+  useEffect(() => {
+    if (session.read_at !== null) return;
+    const now = new Date().toISOString();
+    onPatch(session.id, { read_at: now });
+    void supabase.from("sessions").update({ read_at: now }).eq("id", session.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.id]);
+
+  async function setOverallRating(v: number | null) {
+    onPatch(session.id, { overall_rating: v });
+    await supabase.from("sessions").update({ overall_rating: v }).eq("id", session.id);
+  }
+  async function toggleArchived() {
+    const value = session.archived_at === null ? new Date().toISOString() : null;
+    onPatch(session.id, { archived_at: value });
+    await supabase.from("sessions").update({ archived_at: value }).eq("id", session.id);
+  }
+  async function toggleRead() {
+    const value = session.read_at === null ? new Date().toISOString() : null;
+    onPatch(session.id, { read_at: value });
+    await supabase.from("sessions").update({ read_at: value }).eq("id", session.id);
+  }
+
   const upsertReview = useCallback(
     async (responseId: string, patch: { rating?: number | null; notes?: string | null }) => {
       const existing = reviews[responseId];
+
       const next: ReviewRow = {
         id: existing?.id ?? "",
         response_id: responseId,
@@ -487,9 +572,10 @@ function Detail({
 
         <header className="mt-6 border-b-2 border-charcoal/20 pb-6">
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
-            {session.email ?? "—"}
+            {displayName}
           </h1>
           <div className="mt-3 space-y-1 font-mono text-xs uppercase tracking-[0.2em] text-charcoal/70">
+            {session.email && <div>{session.email}</div>}
             {session.linkedin_url && (
               <div>
                 <a
@@ -504,7 +590,34 @@ function Detail({
             )}
             <div>Submitted {formatDateTime(session.submitted_at)}</div>
           </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-6">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60 mb-1">
+                Overall rating
+              </div>
+              <StarRating
+                value={session.overall_rating}
+                onChange={(v) => void setOverallRating(v)}
+              />
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => void toggleRead()}
+                className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+              >
+                {session.read_at === null ? "Mark as read" : "Mark as unread"}
+              </button>
+              <button
+                onClick={() => void toggleArchived()}
+                className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+              >
+                {session.archived_at === null ? "Archive" : "Unarchive"}
+              </button>
+            </div>
+          </div>
         </header>
+
 
         {responses === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
@@ -726,5 +839,17 @@ function TextResponseView({
         </div>
       ))}
     </dl>
+  );
+}
+
+function MiniStars({ value }: { value: number | null }) {
+  if (value == null) {
+    return <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/30">—</span>;
+  }
+  return (
+    <span className="text-iron text-sm leading-none tracking-tight" aria-label={`${value} of 5`}>
+      {"★".repeat(value)}
+      <span className="text-charcoal/20">{"★".repeat(5 - value)}</span>
+    </span>
   );
 }

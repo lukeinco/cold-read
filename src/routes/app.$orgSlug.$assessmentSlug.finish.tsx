@@ -18,6 +18,7 @@ export const Route = createFileRoute("/app/$orgSlug/$assessmentSlug/finish")({
   component: FinishScreen,
 });
 
+const nameSchema = z.string().trim().min(1).max(120);
 const emailSchema = z.string().trim().email().max(255);
 const urlSchema = z
   .string()
@@ -30,15 +31,18 @@ const urlSchema = z
 
 function FinishScreen() {
   const { sessionId, sessionToken, clearSession } = useSession();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const nameValid = useMemo(() => nameSchema.safeParse(name).success, [name]);
   const emailValid = useMemo(() => emailSchema.safeParse(email).success, [email]);
   const urlValid = useMemo(() => urlSchema.safeParse(linkedin).success, [linkedin]);
-  const canSubmit = emailValid && urlValid && !submitting && !!sessionId && !!sessionToken;
+  const canSubmit = nameValid && emailValid && urlValid && !submitting && !!sessionId && !!sessionToken;
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +58,7 @@ function FinishScreen() {
         body: JSON.stringify({
           sessionId,
           sessionToken,
+          name: name.trim(),
           email: email.trim(),
           linkedinUrl: linkedin.trim().replace(/^(https?:\/\/)?(www\.)?/i, "https://www."),
         }),
@@ -98,6 +103,15 @@ function FinishScreen() {
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-6">
           <Field
+            label="FULL NAME"
+            type="text"
+            value={name}
+            onChange={setName}
+            valid={name.length === 0 || nameValid}
+            placeholder="Jane Doe"
+            autoComplete="name"
+          />
+          <Field
             label="EMAIL"
             type="email"
             value={email}
@@ -106,6 +120,7 @@ function FinishScreen() {
             placeholder="you@company.com"
             autoComplete="email"
           />
+
           <Field
             label="LINKEDIN URL"
             type="url"
