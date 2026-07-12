@@ -841,3 +841,15 @@ function TextResponseView({
     </dl>
   );
 }
+
+function MiniStars({ value }: { value: number | null }) {
+  if (value == null) {
+    return <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-charcoal/30">—</span>;
+  }
+  return (
+    <span className="text-iron text-sm leading-none tracking-tight" aria-label={`${value} of 5`}>
+      {"★".repeat(value)}
+      <span className="text-charcoal/20">{"★".repeat(5 - value)}</span>
+    </span>
+  );
+}
