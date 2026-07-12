@@ -182,24 +182,14 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
   useEffect(() => {
     if (!assessmentId) {
       setRows([]);
-      setActiveSegments([]);
-      setRespCounts({});
+      setNameFallbacks({});
       return;
     }
     let alive = true;
     (async () => {
-      const { data: segs } = await supabase
-        .from("segments")
-        .select("id,type,cue_label,is_active,sort_order,entry_fields")
-        .eq("assessment_id", assessmentId)
-        .order("sort_order", { ascending: true });
-      if (!alive) return;
-      const segList = ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta);
-      setActiveSegments(segList.filter((s) => s.is_active));
-
       const { data: sess } = await supabase
         .from("sessions")
-        .select("id,email,linkedin_url,submitted_at")
+        .select("id,name,email,linkedin_url,submitted_at,overall_rating,archived_at,read_at")
         .eq("assessment_id", assessmentId)
         .not("submitted_at", "is", null)
         .order("submitted_at", { ascending: false });
@@ -207,29 +197,34 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
       const sessList = (sess as SessionRow[]) ?? [];
       setRows(sessList);
 
-      if (sessList.length) {
+      // Resolve name fallback for sessions without a stored name.
+      const needing = sessList.filter((s) => !s.name?.trim());
+      if (needing.length) {
         const { data: resps } = await supabase
           .from("responses")
-          .select("session_id,segment_id")
+          .select("session_id,text_value,segments!inner(entry_fields)")
+          .eq("response_type", "text")
           .in(
             "session_id",
-            sessList.map((s) => s.id),
+            needing.map((s) => s.id),
           );
         if (!alive) return;
-        const activeIds = new Set(segList.filter((s) => s.is_active).map((s) => s.id));
-        const counts: Record<string, { total: number; activeCovered: number }> = {};
-        for (const s of sessList) counts[s.id] = { total: 0, activeCovered: 0 };
-        const covered: Record<string, Set<string>> = {};
-        for (const r of (resps as Array<{ session_id: string; segment_id: string }> | null) ?? []) {
-          counts[r.session_id].total += 1;
-          if (activeIds.has(r.segment_id)) {
-            (covered[r.session_id] ??= new Set()).add(r.segment_id);
+        const map: Record<string, string> = {};
+        for (const r of (resps as Array<{
+          session_id: string;
+          text_value: Record<string, string> | null;
+          segments: { entry_fields: Array<{ id: string; label: string }> | null } | null;
+        }> | null) ?? []) {
+          if (map[r.session_id]) continue;
+          const fields = r.segments?.entry_fields ?? [];
+          const nameField = fields.find((f) => /name/i.test(f.label));
+          if (nameField && r.text_value && r.text_value[nameField.id]?.trim()) {
+            map[r.session_id] = r.text_value[nameField.id].trim();
           }
         }
-        for (const s of sessList) counts[s.id].activeCovered = covered[s.id]?.size ?? 0;
-        setRespCounts(counts);
+        setNameFallbacks(map);
       } else {
-        setRespCounts({});
+        setNameFallbacks({});
       }
     })();
     return () => {
@@ -239,17 +234,39 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
 
   void isSuperadmin;
 
+  const displayName = useCallback(
+    (r: SessionRow) => r.name?.trim() || nameFallbacks[r.id] || r.email || "—",
+    [nameFallbacks],
+  );
+
+  async function setArchived(id: string, archived: boolean) {
+    const value = archived ? new Date().toISOString() : null;
+    patchRow(id, { archived_at: value });
+    await supabase.from("sessions").update({ archived_at: value }).eq("id", id);
+  }
+  async function setRead(id: string, read: boolean) {
+    const value = read ? new Date().toISOString() : null;
+    patchRow(id, { read_at: value });
+    await supabase.from("sessions").update({ read_at: value }).eq("id", id);
+  }
+
   if (selected) {
     return (
       <Detail
         session={selected}
         userId={userId}
+        displayName={displayName(selected)}
         onBack={() => setSelected(null)}
+        onPatch={patchRow}
       />
     );
   }
 
-  const activeTotal = activeSegments.length;
+  const visibleRows = (rows ?? []).filter((r) =>
+    view === "active" ? r.archived_at === null : r.archived_at !== null,
+  );
+
+
 
   return (
     <main className="min-h-screen bg-parchment px-6 py-12">
