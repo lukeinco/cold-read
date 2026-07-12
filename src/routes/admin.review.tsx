@@ -426,12 +426,17 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
 function Detail({
   session,
   userId,
+  displayName,
   onBack,
+  onPatch,
 }: {
   session: SessionRow;
   userId: string;
+  displayName: string;
   onBack: () => void;
+  onPatch: (id: string, patch: Partial<SessionRow>) => void;
 }) {
+
   const [responses, setResponses] = useState<ResponseRow[] | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [segments, setSegments] = useState<Record<string, SegmentMeta>>({});
