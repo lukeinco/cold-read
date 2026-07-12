@@ -126,12 +126,18 @@ function ReviewPage() {
 function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boolean }) {
   const [rows, setRows] = useState<SessionRow[] | null>(null);
   const [selected, setSelected] = useState<SessionRow | null>(null);
-  const [activeSegments, setActiveSegments] = useState<SegmentMeta[]>([]);
-  const [respCounts, setRespCounts] = useState<Record<string, { total: number; activeCovered: number }>>({});
+  const [nameFallbacks, setNameFallbacks] = useState<Record<string, string>>({});
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<Assessment[] | null>(null);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [view, setView] = useState<"active" | "archived">("active");
+
+  function patchRow(id: string, patch: Partial<SessionRow>) {
+    setRows((prev) => (prev ? prev.map((r) => (r.id === id ? { ...r, ...patch } : r)) : prev));
+    setSelected((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+  }
+
 
   useEffect(() => {
     (async () => {
