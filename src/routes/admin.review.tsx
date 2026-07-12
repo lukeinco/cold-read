@@ -572,9 +572,10 @@ function Detail({
 
         <header className="mt-6 border-b-2 border-charcoal/20 pb-6">
           <h1 className="font-display text-4xl md:text-5xl tracking-wide text-charcoal leading-none">
-            {session.email ?? "—"}
+            {displayName}
           </h1>
           <div className="mt-3 space-y-1 font-mono text-xs uppercase tracking-[0.2em] text-charcoal/70">
+            {session.email && <div>{session.email}</div>}
             {session.linkedin_url && (
               <div>
                 <a
@@ -589,7 +590,34 @@ function Detail({
             )}
             <div>Submitted {formatDateTime(session.submitted_at)}</div>
           </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-6">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60 mb-1">
+                Overall rating
+              </div>
+              <StarRating
+                value={session.overall_rating}
+                onChange={(v) => void setOverallRating(v)}
+              />
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => void toggleRead()}
+                className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+              >
+                {session.read_at === null ? "Mark as read" : "Mark as unread"}
+              </button>
+              <button
+                onClick={() => void toggleArchived()}
+                className="font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border border-charcoal/25 text-charcoal/70 hover:text-primary hover:border-primary"
+              >
+                {session.archived_at === null ? "Archive" : "Unarchive"}
+              </button>
+            </div>
+          </div>
         </header>
+
 
         {responses === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
