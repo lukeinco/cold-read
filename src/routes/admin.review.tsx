@@ -435,6 +435,7 @@ function Detail({
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [segments, setSegments] = useState<Record<string, SegmentMeta>>({});
   const [reviews, setReviews] = useState<Record<string, ReviewRow>>({});
+  const [playlist, setPlaylist] = useState<Array<{ url: string; label: string }>>([]);
 
   useEffect(() => {
     (async () => {
@@ -458,17 +459,41 @@ function Detail({
       }));
       setResponses(rows);
 
-      const segIds = Array.from(new Set(rows.map((r) => r.segment_id)));
-      if (segIds.length) {
+      const { data: sessRow } = await supabase
+        .from("sessions")
+        .select("assessment_id")
+        .eq("id", session.id)
+        .maybeSingle();
+      const assessmentId = (sessRow as { assessment_id?: string } | null)?.assessment_id;
+
+      type SegFull = SegmentMeta & { prompt_audio_path: string | null };
+      let allSegs: SegFull[] = [];
+      if (assessmentId) {
         const { data: segs } = await supabase
           .from("segments")
-          .select("id,type,cue_label,is_active,sort_order,entry_fields")
-          .in("id", segIds);
-        const map: Record<string, SegmentMeta> = {};
-        for (const s of ((segs as Record<string, unknown>[]) ?? []).map(coerceSegmentMeta))
-          map[s.id] = s;
-        setSegments(map);
+          .select("id,type,cue_label,is_active,sort_order,entry_fields,prompt_audio_path")
+          .eq("assessment_id", assessmentId)
+          .order("sort_order", { ascending: true });
+        allSegs = ((segs as Record<string, unknown>[]) ?? []).map((s) => ({
+          ...coerceSegmentMeta(s),
+          prompt_audio_path: (s.prompt_audio_path as string | null) ?? null,
+        }));
+      } else {
+        const segIds = Array.from(new Set(rows.map((r) => r.segment_id)));
+        if (segIds.length) {
+          const { data: segs } = await supabase
+            .from("segments")
+            .select("id,type,cue_label,is_active,sort_order,entry_fields,prompt_audio_path")
+            .in("id", segIds);
+          allSegs = ((segs as Record<string, unknown>[]) ?? []).map((s) => ({
+            ...coerceSegmentMeta(s),
+            prompt_audio_path: (s.prompt_audio_path as string | null) ?? null,
+          }));
+        }
       }
+      const segMap: Record<string, SegmentMeta> = {};
+      for (const s of allSegs) segMap[s.id] = s;
+      setSegments(segMap);
 
       const respIds = rows.map((r) => r.id);
       if (respIds.length) {
@@ -495,6 +520,38 @@ function Detail({
         }),
       );
       setUrls(signed);
+
+      // Build interleaved playlist across the whole assessment in sort_order.
+      const respBySeg = new Map<string, ResponseRow>();
+      for (const r of rows) respBySeg.set(r.segment_id, r);
+      const items: Array<{ url: string; label: string; sort: number }> = [];
+      await Promise.all(
+        allSegs.map(async (seg) => {
+          if (seg.type === "audio" && seg.prompt_audio_path) {
+            const { data: sig } = await supabase.storage
+              .from("prompts")
+              .createSignedUrl(seg.prompt_audio_path, 60 * 60);
+            if (sig?.signedUrl) {
+              items.push({
+                url: sig.signedUrl,
+                label: seg.cue_label || "Prospect",
+                sort: seg.sort_order,
+              });
+            }
+            return;
+          }
+          const resp = respBySeg.get(seg.id);
+          if (resp && resp.response_type === "audio" && signed[resp.id]) {
+            items.push({
+              url: signed[resp.id],
+              label: seg.cue_label || "Candidate",
+              sort: seg.sort_order,
+            });
+          }
+        }),
+      );
+      items.sort((a, b) => a.sort - b.sort);
+      setPlaylist(items.map(({ url, label }) => ({ url, label })));
     })();
   }, [session.id, userId]);
 
@@ -612,6 +669,10 @@ function Detail({
           </div>
         </header>
 
+        {playlist.length >= 2 && <FullCallPlayer items={playlist} />}
+
+
+
 
         {responses === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
@@ -678,6 +739,79 @@ function Detail({
     </main>
   );
 }
+
+function FullCallPlayer({ items }: { items: Array<{ url: string; label: string }> }) {
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) {
+      el.src = items[index].url;
+      el.play().catch(() => setPlaying(false));
+    } else {
+      el.pause();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, index]);
+
+  function start() {
+    setIndex(0);
+    setPlaying(true);
+  }
+  function stop() {
+    setPlaying(false);
+    setIndex(0);
+    const el = audioRef.current;
+    if (el) {
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    }
+  }
+  function onEnded() {
+    if (index + 1 < items.length) {
+      setIndex(index + 1);
+    } else {
+      setPlaying(false);
+      setIndex(0);
+    }
+  }
+
+  return (
+    <section className="mt-8 border-2 border-charcoal/25 bg-parchment p-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
+            Full call
+          </div>
+          <div className="mt-1 font-serif text-sm text-charcoal/85">
+            {playing
+              ? `Playing ${index + 1} of ${items.length} — ${items[index].label}`
+              : `${items.length} clips, in order`}
+          </div>
+        </div>
+        <button
+          onClick={() => (playing ? stop() : start())}
+          className="font-mono text-[11px] uppercase tracking-[0.24em] px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-parchment transition-colors"
+        >
+          {playing ? "■ Stop" : "▶ Play full call"}
+        </button>
+      </div>
+      <audio
+        ref={audioRef}
+        controls
+        onEnded={onEnded}
+        className="mt-4 w-full"
+        preload="none"
+      />
+    </section>
+  );
+}
+
+
 
 function StarRating({
   value,
