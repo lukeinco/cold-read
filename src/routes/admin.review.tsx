@@ -362,16 +362,10 @@ function Dashboard({ userId, isSuperadmin }: { userId: string; isSuperadmin: boo
               return (
                 <li key={r.id}>
                   <div
-                    className={`grid grid-cols-1 md:grid-cols-[auto_1.4fr_1.2fr_auto_auto_auto] gap-2 md:gap-5 items-center py-4 px-2 hover:bg-charcoal/[0.04] transition-colors ${
-                      unread ? "font-semibold" : ""
+                    className={`grid grid-cols-1 md:grid-cols-[1.4fr_1.2fr_auto_auto_auto] gap-2 md:gap-5 items-center py-4 px-3 hover:bg-charcoal/[0.04] transition-colors ${
+                      unread ? "bg-blue-400/10" : ""
                     }`}
                   >
-                    <span
-                      aria-label={unread ? "Unread" : "Read"}
-                      className={`inline-block w-2.5 h-2.5 rounded-full ${
-                        unread ? "bg-red-500" : "bg-transparent"
-                      }`}
-                    />
                     <button
                       onClick={() => setSelected(r)}
                       className="text-left font-serif text-base text-charcoal truncate hover:text-primary"
