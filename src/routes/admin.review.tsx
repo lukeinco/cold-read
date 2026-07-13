@@ -740,6 +740,79 @@ function Detail({
   );
 }
 
+function FullCallPlayer({ items }: { items: Array<{ url: string; label: string }> }) {
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) {
+      el.src = items[index].url;
+      el.play().catch(() => setPlaying(false));
+    } else {
+      el.pause();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, index]);
+
+  function start() {
+    setIndex(0);
+    setPlaying(true);
+  }
+  function stop() {
+    setPlaying(false);
+    setIndex(0);
+    const el = audioRef.current;
+    if (el) {
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    }
+  }
+  function onEnded() {
+    if (index + 1 < items.length) {
+      setIndex(index + 1);
+    } else {
+      setPlaying(false);
+      setIndex(0);
+    }
+  }
+
+  return (
+    <section className="mt-8 border-2 border-charcoal/25 bg-parchment p-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-charcoal/60">
+            Full call
+          </div>
+          <div className="mt-1 font-serif text-sm text-charcoal/85">
+            {playing
+              ? `Playing ${index + 1} of ${items.length} — ${items[index].label}`
+              : `${items.length} clips, in order`}
+          </div>
+        </div>
+        <button
+          onClick={() => (playing ? stop() : start())}
+          className="font-mono text-[11px] uppercase tracking-[0.24em] px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-parchment transition-colors"
+        >
+          {playing ? "■ Stop" : "▶ Play full call"}
+        </button>
+      </div>
+      <audio
+        ref={audioRef}
+        controls
+        onEnded={onEnded}
+        className="mt-4 w-full"
+        preload="none"
+      />
+    </section>
+  );
+}
+
+
+
 function StarRating({
   value,
   onChange,
