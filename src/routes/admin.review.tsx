@@ -669,6 +669,10 @@ function Detail({
           </div>
         </header>
 
+        {playlist.length >= 2 && <FullCallPlayer items={playlist} />}
+
+
+
 
         {responses === null ? (
           <p className="mt-10 font-mono text-xs uppercase tracking-[0.24em] text-charcoal/60">
