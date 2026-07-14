@@ -89,7 +89,7 @@ function CodesDashboard() {
   const loadCodes = useCallback(async () => {
     const { data, error } = await supabase
       .from("invite_codes")
-      .select("code,org_id,created_at,used_by,used_at,expires_at")
+      .select("code,org_id,created_at,expires_at")
       .order("created_at", { ascending: false });
     if (error) {
       setError(error.message);
@@ -97,6 +97,7 @@ function CodesDashboard() {
     }
     setCodes((data as InviteCode[]) ?? []);
   }, []);
+
 
   const loadOrgs = useCallback(async () => {
     const { data } = await supabase
