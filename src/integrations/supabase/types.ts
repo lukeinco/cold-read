@@ -73,21 +73,18 @@ export type Database = {
           code: string
           created_at: string
           created_by: string | null
-          expires_at: string
           org_id: string
         }
         Insert: {
           code: string
           created_at?: string
           created_by?: string | null
-          expires_at?: string
           org_id: string
         }
         Update: {
           code?: string
           created_at?: string
           created_by?: string | null
-          expires_at?: string
           org_id?: string
         }
         Relationships: [
