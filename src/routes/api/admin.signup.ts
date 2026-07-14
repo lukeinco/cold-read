@@ -39,10 +39,10 @@ export const Route = createFileRoute("/api/admin/signup")({
             "@/integrations/supabase/client.server"
           );
 
-          // 1) Validate invite code (reusable within org until expiry)
+          // 1) Validate invite code (reusable within org, never expires)
           const { data: invite, error: inviteErr } = await supabaseAdmin
             .from("invite_codes")
-            .select("code, org_id, expires_at")
+            .select("code, org_id")
             .eq("code", code)
             .maybeSingle();
           if (inviteErr) {
@@ -52,9 +52,7 @@ export const Route = createFileRoute("/api/admin/signup")({
           if (!invite) {
             return Response.json({ error: "Invite code not found." }, { status: 400 });
           }
-          if (new Date(invite.expires_at as string).getTime() < Date.now()) {
-            return Response.json({ error: "Invite code has expired." }, { status: 400 });
-          }
+
 
           // 2) Create the auth user (auto-confirm so they can log in immediately)
           const { data: created, error: createErr } =
