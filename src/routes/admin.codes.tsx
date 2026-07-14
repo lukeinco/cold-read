@@ -18,10 +18,9 @@ type InviteCode = {
   code: string;
   org_id: string;
   created_at: string;
-  used_by: string | null;
-  used_at: string | null;
   expires_at: string;
 };
+
 
 function CodesPage() {
   const navigate = useNavigate();
