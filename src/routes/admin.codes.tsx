@@ -18,8 +18,8 @@ type InviteCode = {
   code: string;
   org_id: string;
   created_at: string;
-  expires_at: string;
 };
+
 
 
 function CodesPage() {
@@ -89,7 +89,7 @@ function CodesDashboard() {
   const loadCodes = useCallback(async () => {
     const { data, error } = await supabase
       .from("invite_codes")
-      .select("code,org_id,created_at,expires_at")
+      .select("code,org_id,created_at")
       .order("created_at", { ascending: false });
     if (error) {
       setError(error.message);
@@ -97,6 +97,7 @@ function CodesDashboard() {
     }
     setCodes((data as InviteCode[]) ?? []);
   }, []);
+
 
 
   const loadOrgs = useCallback(async () => {
@@ -244,12 +245,10 @@ function CodesDashboard() {
           ) : (
             <ul className="mt-4 divide-y divide-charcoal/15">
               {codes.map((c) => {
-                const expired = new Date(c.expires_at).getTime() < Date.now();
-                const status = expired
-                  ? `Expired ${formatDate(c.expires_at)}`
-                  : `Active · expires ${formatDate(c.expires_at)}`;
-                const statusColor = expired ? "text-primary" : "text-juniper";
+                const status = `Active · created ${formatDate(c.created_at)}`;
+                const statusColor = "text-juniper";
                 return (
+
                   <li
                     key={c.code}
                     className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] items-baseline gap-3 md:gap-6 py-4"
