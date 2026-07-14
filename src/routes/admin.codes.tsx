@@ -245,12 +245,10 @@ function CodesDashboard() {
           ) : (
             <ul className="mt-4 divide-y divide-charcoal/15">
               {codes.map((c) => {
-                const expired = new Date(c.expires_at).getTime() < Date.now();
-                const status = expired
-                  ? `Expired ${formatDate(c.expires_at)}`
-                  : `Active · expires ${formatDate(c.expires_at)}`;
-                const statusColor = expired ? "text-primary" : "text-juniper";
+                const status = `Active · created ${formatDate(c.created_at)}`;
+                const statusColor = "text-juniper";
                 return (
+
                   <li
                     key={c.code}
                     className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto_auto] items-baseline gap-3 md:gap-6 py-4"
