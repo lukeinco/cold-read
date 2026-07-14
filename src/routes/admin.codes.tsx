@@ -244,18 +244,11 @@ function CodesDashboard() {
           ) : (
             <ul className="mt-4 divide-y divide-charcoal/15">
               {codes.map((c) => {
-                const expired =
-                  !c.used_by && new Date(c.expires_at).getTime() < Date.now();
-                const status = c.used_by
-                  ? `Used ${formatDate(c.used_at)} by ${c.used_by.slice(0, 8)}…`
-                  : expired
-                    ? `Expired ${formatDate(c.expires_at)}`
-                    : `Unused · expires ${formatDate(c.expires_at)}`;
-                const statusColor = c.used_by
-                  ? "text-charcoal/60"
-                  : expired
-                    ? "text-primary"
-                    : "text-juniper";
+                const expired = new Date(c.expires_at).getTime() < Date.now();
+                const status = expired
+                  ? `Expired ${formatDate(c.expires_at)}`
+                  : `Active · expires ${formatDate(c.expires_at)}`;
+                const statusColor = expired ? "text-primary" : "text-juniper";
                 return (
                   <li
                     key={c.code}
@@ -273,18 +266,17 @@ function CodesDashboard() {
                       {status}
                     </span>
                     <span>
-                      {!c.used_by && (
-                        <button
-                          onClick={() => handleRevoke(c.code)}
-                          className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
-                        >
-                          Revoke
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleRevoke(c.code)}
+                        className="font-mono text-[11px] uppercase tracking-[0.24em] text-charcoal/70 hover:text-primary"
+                      >
+                        Revoke
+                      </button>
                     </span>
                   </li>
                 );
               })}
+
             </ul>
           )}
         </section>
