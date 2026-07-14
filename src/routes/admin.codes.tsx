@@ -18,8 +18,8 @@ type InviteCode = {
   code: string;
   org_id: string;
   created_at: string;
-  expires_at: string;
 };
+
 
 
 function CodesPage() {
