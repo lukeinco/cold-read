@@ -1,0 +1,1 @@
+ALTER TABLE public.invite_codes DROP COLUMN IF EXISTS used_by, DROP COLUMN IF EXISTS used_at;

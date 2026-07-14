@@ -39,10 +39,10 @@ export const Route = createFileRoute("/api/admin/signup")({
             "@/integrations/supabase/client.server"
           );
 
-          // 1) Validate invite code
+          // 1) Validate invite code (reusable within org until expiry)
           const { data: invite, error: inviteErr } = await supabaseAdmin
             .from("invite_codes")
-            .select("code, org_id, used_by, expires_at")
+            .select("code, org_id, expires_at")
             .eq("code", code)
             .maybeSingle();
           if (inviteErr) {
@@ -51,9 +51,6 @@ export const Route = createFileRoute("/api/admin/signup")({
           }
           if (!invite) {
             return Response.json({ error: "Invite code not found." }, { status: 400 });
-          }
-          if (invite.used_by) {
-            return Response.json({ error: "Invite code already used." }, { status: 400 });
           }
           if (new Date(invite.expires_at as string).getTime() < Date.now()) {
             return Response.json({ error: "Invite code has expired." }, { status: 400 });
@@ -74,21 +71,6 @@ export const Route = createFileRoute("/api/admin/signup")({
           }
           const userId = created.user.id;
 
-          // 3) Consume the code atomically-ish (guard on still-unused)
-          const { data: claimed, error: claimErr } = await supabaseAdmin
-            .from("invite_codes")
-            .update({ used_by: userId, used_at: new Date().toISOString() })
-            .eq("code", code)
-            .is("used_by", null)
-            .select("code");
-          if (claimErr || !claimed || claimed.length !== 1) {
-            // Race lost — roll back the user so the code isn't burned
-            await supabaseAdmin.auth.admin.deleteUser(userId);
-            return Response.json(
-              { error: "Invite code was just used. Ask for a new one." },
-              { status: 409 },
-            );
-          }
 
           // 4) Grant admin role + org membership (idempotent — bootstrap trigger
           // may have already inserted these rows for the superadmin email)
