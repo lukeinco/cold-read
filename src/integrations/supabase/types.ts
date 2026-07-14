@@ -75,8 +75,6 @@ export type Database = {
           created_by: string | null
           expires_at: string
           org_id: string
-          used_at: string | null
-          used_by: string | null
         }
         Insert: {
           code: string
@@ -84,8 +82,6 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           org_id: string
-          used_at?: string | null
-          used_by?: string | null
         }
         Update: {
           code?: string
@@ -93,8 +89,6 @@ export type Database = {
           created_by?: string | null
           expires_at?: string
           org_id?: string
-          used_at?: string | null
-          used_by?: string | null
         }
         Relationships: [
           {
