@@ -555,14 +555,7 @@ function Detail({
     })();
   }, [session.id, userId]);
 
-  // Auto mark-as-read when opening
-  useEffect(() => {
-    if (session.read_at !== null) return;
-    const now = new Date().toISOString();
-    onPatch(session.id, { read_at: now });
-    void supabase.from("sessions").update({ read_at: now }).eq("id", session.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.id]);
+  // Read/unread is only changed by explicit user action (Mark as read/unread button).
 
   async function setOverallRating(v: number | null) {
     onPatch(session.id, { overall_rating: v });
